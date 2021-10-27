@@ -6,7 +6,17 @@ import matplotlib.pyplot as plt
 import gmsh
 
 
-def create_random_contour(nvert: int):
+
+
+def create_random_contour(nvert: int)->np.ndarray:
+    """Create a random polygonal contour with nvert vertices
+    
+    :param nvert: The number of desired vertices
+    :type nvert: int
+    
+    :return coord: Vector of coordinates for the nvert vertices
+    :rtype type: np.ndarray
+    """
     r = 1.
     rmin = 0.3
     theta = 0.
@@ -21,7 +31,7 @@ def create_random_contour(nvert: int):
 
         coord[i, 0] = x
         coord[i, 1] = y
-    return
+    return coord
 
 
 def main():

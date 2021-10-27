@@ -4,9 +4,44 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import gmsh
+import sys
 
 
+def mesh_contour(coord:np.ndarray,mesh_file:str="polygon.dat",h:float=0.1)->None:
+    """Simple mesh création with Gmsh API
+    
+    
+    """
+    gmsh.initialize()
 
+    gmsh.model.add("polygon")
+    
+    nb_vertices = len(coord)
+    
+    # Vertices 
+    for i in range(nb_vertices):
+        x = coord[i,0]
+        y = coord[i,1]
+        gmsh.model.geo.addPoint(x,y,0,h,i)
+
+    # Edges
+    for i in range(nb_vertices):
+        gmsh.model.geo.addLine(i, (i+1)%nb_vertices,i)
+        
+
+    gmsh.model.geo.addCurveLoop([i for i in range(nb_vertices)],1)
+    
+    gmsh.model.geo.addPlaneSurface([1], 1)
+    
+    gmsh.model.geo.synchronize()
+
+    gmsh.model.mesh.generate(2)
+    gmsh.write("t1.mesh")
+
+    if '-nopopup' not in sys.argv:
+        gmsh.fltk.run()
+
+    gmsh.finalize()
 
 def create_random_contour(nvert: int)->np.ndarray:
     """Create a random polygonal contour with nvert vertices
@@ -36,8 +71,8 @@ def create_random_contour(nvert: int)->np.ndarray:
 
 def main():
 
-    create_random_contour(nvert=100)
-
+    coord = create_random_contour(nvert=6)
+    mesh_contour(coord, 1)
     return
 
 

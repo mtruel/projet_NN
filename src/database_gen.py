@@ -7,32 +7,31 @@ import gmsh
 import sys
 
 
-def mesh_contour(coord:np.ndarray,mesh_file:str="polygon.dat",h:float=0.1)->None:
+def mesh_contour(coord: np.ndarray, mesh_file: str = "polygon.dat", h: float = 0.1) -> None:
     """Simple mesh création with Gmsh API
-    
-    
+
+
     """
     gmsh.initialize()
 
     gmsh.model.add("polygon")
-    
+
     nb_vertices = len(coord)
-    
-    # Vertices 
+
+    # Vertices
     for i in range(nb_vertices):
-        x = coord[i,0]
-        y = coord[i,1]
-        gmsh.model.geo.addPoint(x,y,0,h,i)
+        x = coord[i, 0]
+        y = coord[i, 1]
+        gmsh.model.geo.addPoint(x, y, 0, h, i)
 
     # Edges
     for i in range(nb_vertices):
-        gmsh.model.geo.addLine(i, (i+1)%nb_vertices,i)
-        
+        gmsh.model.geo.addLine(i, (i+1) % nb_vertices, i)
 
-    gmsh.model.geo.addCurveLoop([i for i in range(nb_vertices)],1)
-    
+    gmsh.model.geo.addCurveLoop([i for i in range(nb_vertices)], 1)
+
     gmsh.model.geo.addPlaneSurface([1], 1)
-    
+
     gmsh.model.geo.synchronize()
 
     gmsh.model.mesh.generate(2)
@@ -43,12 +42,13 @@ def mesh_contour(coord:np.ndarray,mesh_file:str="polygon.dat",h:float=0.1)->None
 
     gmsh.finalize()
 
-def create_random_contour(nvert: int)->np.ndarray:
+
+def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
-    
+
     :param nvert: The number of desired vertices
     :type nvert: int
-    
+
     :return coord: Vector of coordinates for the nvert vertices
     :rtype type: np.ndarray
     """

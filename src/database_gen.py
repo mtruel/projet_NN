@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import gmsh
 import sys
 
+import procruste as pr
+
 
 def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
     """Simple mesh création with Gmsh API
@@ -40,10 +42,10 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
 
     # Number of vertices
     nb_v = len(gmsh.model.mesh.get_nodes()[0])
-    
+
     # Number of inner_vertices
     nb_inner_v = nb_v - nb_v_in_c
-    
+
     gmsh.write(mesh_file)
 
     # Open mesh in GUI
@@ -53,6 +55,7 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
     gmsh.finalize()
 
     return nb_inner_v
+
 
 def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
@@ -77,6 +80,7 @@ def create_random_contour(nvert: int) -> np.ndarray:
 
         coord[i, 0] = x
         coord[i, 1] = y
+
     return coord
 
 
@@ -94,10 +98,11 @@ def export_contours(n: int) -> None:
 def main():
 
     coord = create_random_contour(nvert=50)
-    #mesh_contour(coord, 1)
-    export_contours(3)
+    pr.procruste(coord)
     # Pour ne pas mailler les contours (ne pas les subdiviser), on prend h>>(longueur des contours)
     mesh_contour(coord, "polygon.mesh", 10)
+    export_contours(3)
+
     return
 
 

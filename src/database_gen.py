@@ -10,11 +10,14 @@ import procruste as pr
 
 
 def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
-    """Simple mesh création with Gmsh API
+    """Simple mesh creation with Gmsh API
 
 
     """
     gmsh.initialize()
+
+    # Print only gmsh warnings and errors
+    gmsh.option.setNumber("General.Verbosity", 2)
 
     gmsh.model.add("polygon")
 
@@ -41,16 +44,16 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
     gmsh.model.mesh.generate(2)
 
     # Number of vertices
-    nb_v = len(gmsh.model.mesh.get_nodes()[0])
+    nb_v = len(gmsh.model.mesh.getNodes()[0])
 
     # Number of inner_vertices
     nb_inner_v = nb_v - nb_v_in_c
 
     gmsh.write(mesh_file)
 
-    # Open mesh in GUI
-    if '-nopopup' not in sys.argv:
-        gmsh.fltk.run()
+    # # Open mesh in GUI
+    # if '-nopopup' not in sys.argv:
+    #     gmsh.fltk.run()
 
     gmsh.finalize()
 
@@ -60,11 +63,10 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
 def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
 
-    :param nvert: The number of desired vertices
-    :type nvert: int
+    :param int nvert: The number of desired vertices
 
-    :return coord: Vector of coordinates for the nvert vertices
-    :rtype type: np.ndarray
+    :return: Vector of coordinates for the nvert vertices
+    :rtype: np.ndarray
     """
     r = 1.
     rmin = 0.3

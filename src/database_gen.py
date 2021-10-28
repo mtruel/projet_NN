@@ -7,7 +7,7 @@ import gmsh
 import sys
 
 
-def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> None:
+def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
     """Simple mesh création with Gmsh API
 
 
@@ -16,32 +16,43 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> None:
 
     gmsh.model.add("polygon")
 
-    nb_vertices = len(coord)
+    # Number of vertices in contour
+    nb_v_in_c = len(coord)
 
     # Vertices
-    for i in range(nb_vertices):
+    for i in range(nb_v_in_c):
         x = coord[i, 0]
         y = coord[i, 1]
         gmsh.model.geo.addPoint(x, y, 0, h, i)
 
     # Edges
-    for i in range(nb_vertices):
-        gmsh.model.geo.addLine(i, (i+1) % nb_vertices, i)
+    for i in range(nb_v_in_c):
+        gmsh.model.geo.addLine(i, (i+1) % nb_v_in_c, i)
 
-    gmsh.model.geo.addCurveLoop([i for i in range(nb_vertices)], 1)
+    gmsh.model.geo.addCurveLoop([i for i in range(nb_v_in_c)], 1)
 
     gmsh.model.geo.addPlaneSurface([1], 1)
 
     gmsh.model.geo.synchronize()
 
+    # Meshing
     gmsh.model.mesh.generate(2)
+
+    # Number of vertices
+    nb_v = len(gmsh.model.mesh.get_nodes()[0])
+    
+    # Number of inner_vertices
+    nb_inner_v = nb_v - nb_v_in_c
+    
     gmsh.write(mesh_file)
 
+    # Open mesh in GUI
     if '-nopopup' not in sys.argv:
         gmsh.fltk.run()
 
     gmsh.finalize()
 
+    return nb_inner_v
 
 def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
@@ -82,9 +93,10 @@ def export_contours(n: int) -> None:
 
 def main():
 
-    coord = create_random_contour(nvert=6)
+    coord = create_random_contour(nvert=50)
     #mesh_contour(coord, 1)
     export_contours(3)
+    mesh_contour(coord, "polygon.mesh", 10)
     return
 
 

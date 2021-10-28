@@ -96,6 +96,7 @@ def main():
     coord = create_random_contour(nvert=50)
     #mesh_contour(coord, 1)
     export_contours(3)
+    # Pour ne pas mailler les contours (ne pas les subdiviser), on prend h>>(longueur des contours)
     mesh_contour(coord, "polygon.mesh", 10)
     return
 

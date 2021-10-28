@@ -7,7 +7,7 @@ import gmsh
 import sys
 
 
-def mesh_contour(coord: np.ndarray, mesh_file: str = "polygon.dat", h: float = 0.1) -> None:
+def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> None:
     """Simple mesh création with Gmsh API
 
 
@@ -35,7 +35,7 @@ def mesh_contour(coord: np.ndarray, mesh_file: str = "polygon.dat", h: float = 0
     gmsh.model.geo.synchronize()
 
     gmsh.model.mesh.generate(2)
-    gmsh.write("t1.mesh")
+    gmsh.write(mesh_file)
 
     if '-nopopup' not in sys.argv:
         gmsh.fltk.run()

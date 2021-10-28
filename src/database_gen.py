@@ -69,10 +69,22 @@ def create_random_contour(nvert: int) -> np.ndarray:
     return coord
 
 
+def export_contours(n: int) -> None:
+
+    for k in range(n):
+        coord = create_random_contour(nvert=6)
+        f = open("exports/export"+str(k)+".txt", "w+")
+        for i in coord:
+            f.write(str(i[0])+" ")
+            f.write(str(i[1])+"\n")
+    return 0
+
+
 def main():
 
     coord = create_random_contour(nvert=6)
-    mesh_contour(coord, 1)
+    #mesh_contour(coord, 1)
+    export_contours(3)
     return
 
 

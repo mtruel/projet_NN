@@ -101,7 +101,7 @@ def main():
     pr.procruste(coord)
     # Pour ne pas mailler les contours (ne pas les subdiviser), on prend h>>(longueur des contours)
     mesh_contour(coord, "polygon.mesh", 10)
-    export_contours(3)
+    # export_contours(3)
 
     return
 

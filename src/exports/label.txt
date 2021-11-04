@@ -1,3 +1,0 @@
-poly6_0.dat,3
-poly6_1.dat,2
-poly6_2.dat,3

@@ -41,7 +41,7 @@ def procrustes(coord: np.ndarray) -> None:
 
     plt.plot(coord[:, 0], coord[:, 1])
     plt.plot(reg_coord[:, 0], reg_coord[:, 1])
-    plt.show()
+    # plt.show()
 
     # In the procrustes algorithm, points are scaled with the absolute 2-norm,
     # but maybe it is better to scale with the 2-norm scaled by the number of points ???
@@ -49,7 +49,7 @@ def procrustes(coord: np.ndarray) -> None:
 
     plt.plot(coord[:, 0], coord[:, 1])
     plt.plot(reg_coord[:, 0], reg_coord[:, 1])
-    plt.show()
+    # plt.show()
     return
 
 

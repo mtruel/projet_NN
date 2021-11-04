@@ -1,6 +1,7 @@
 #!/bin/python3
 
 import math
+from re import L
 import numpy as np
 import matplotlib.pyplot as plt
 import gmsh
@@ -93,30 +94,39 @@ def create_random_contour(nvert: int) -> np.ndarray:
     return coord
 
 
-def export_contours(n: int) -> None:
+def export(ls: float, nvert: int, nfiles: int) -> None:
     """Exports the coordinates of randomly generated contours in multiple txt files
 
-    :param int n: The number of desired text files
+    :param int ls: The contour size
+    :param int nvert: The number of verticies of the contour
+    :param int nfiles: The number of desired text files
 
     :return: Creates the files in the desired folder
     :rtype:
     """
+    # Label file
+    l = open("label.txt", "w+")
+    for k in range(nfiles):
+        coord = create_random_contour(nvert)
+        pr.procrustes(coord)
+        ninnerVertices = mesh_contour(coord, "polygon.mesh")
 
-    for k in range(n):
-        coord = create_random_contour(nvert=6)
+        # Write label files
+
+        l.write("poly"+str(nvert)+"_"+str(k)+".dat,"+str(ninnerVertices)+"\n")
+
+        # Write countour files
         f = open("exports/export"+str(k)+".txt", "w+")
+
+        f.write(str(ls)+"\n")
         for i in coord:
-            f.write(str(i[0])+" ")
-            f.write(str(i[1])+"\n")
+            f.write(str(i[0])+"\n"+str(i[1])+"\n")
     return 0
 
 
 def main():
 
-    coord = create_random_contour(nvert=50)
-    pr.procrustes(coord)
-    mesh_contour(coord, "polygon.mesh")
-    # export_contours(3)
+    export(1.0, 6, 3)
 
     return
 

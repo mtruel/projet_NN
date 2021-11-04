@@ -7,9 +7,13 @@ import matplotlib.pyplot as plt
 
 
 def reg_unit_polygon_gen(nvert: int) -> np.ndarray:
-    """
+    """Generates a regular unit polygon of nvert vertices
 
-    """
+        :param int nvert: The number of vertices
+
+        :return: Vector of coordinates for the nvert vertices
+        :rtype: np.ndarray
+        """
 
     theta = 0.0
     coord = np.ndarray((nvert, 2))
@@ -22,10 +26,15 @@ def reg_unit_polygon_gen(nvert: int) -> np.ndarray:
     return coord
 
 
-def procruste(coord: np.ndarray) -> None:
-    """
+def procrustes(coord: np.ndarray) -> None:
+    """Determines a linear transformation of the points of the generated polygon 
+    to best conform them to the points of the regular unit polygon
 
-    """
+        :param np.ndarray coord: The coordinates of the polygon to transform
+
+        :return: Changes the coordinates of the polygon
+        :rtype:
+        """
 
     nvert = len(coord)
     reg_coord = reg_unit_polygon_gen(nvert)
@@ -34,7 +43,7 @@ def procruste(coord: np.ndarray) -> None:
     plt.plot(reg_coord[:, 0], reg_coord[:, 1])
     plt.show()
 
-    # In the procruste algorithm, points are scaled with the absolute 2-norm,
+    # In the procrustes algorithm, points are scaled with the absolute 2-norm,
     # but maybe it is better to scale with the 2-norm scaled by the number of points ???
     reg_coord, coord, disparity = sp.procrustes(reg_coord, coord)
 

@@ -6,13 +6,17 @@ import matplotlib.pyplot as plt
 import gmsh
 import sys
 
-import procruste as pr
+import procrustes as pr
 
 
-def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
-    """Simple mesh creation with Gmsh API
+def mesh_contour(coord: np.ndarray, mesh_file) -> int:
+    """Simple .mesh generation with Gmsh API from a given contour
 
+    :param np.ndarray coord: The coordinates of the contour
+    :param string mesh_file: The name of the output .mesh file
 
+    :return: Number of inner vertices
+    :rtype: int
     """
     gmsh.initialize()
 
@@ -23,6 +27,9 @@ def mesh_contour(coord: np.ndarray, mesh_file, h: float) -> int:
 
     # Number of vertices in contour
     nb_v_in_c = len(coord)
+
+    # Constraint (h >> contour_lenght to avoid meshing (subdividing) of contours)
+    h = 10
 
     # Vertices
     for i in range(nb_v_in_c):
@@ -69,7 +76,7 @@ def create_random_contour(nvert: int) -> np.ndarray:
     :rtype: np.ndarray
     """
     r = 1.
-    rmin = 0.3
+    rmin = 0.7
     theta = 0.
     x = y = 0.
     coord = np.ndarray((nvert, 2))
@@ -87,6 +94,13 @@ def create_random_contour(nvert: int) -> np.ndarray:
 
 
 def export_contours(n: int) -> None:
+    """Exports the coordinates of randomly generated contours in multiple txt files
+
+    :param int n: The number of desired text files
+
+    :return: Creates the files in the desired folder
+    :rtype:
+    """
 
     for k in range(n):
         coord = create_random_contour(nvert=6)
@@ -100,9 +114,8 @@ def export_contours(n: int) -> None:
 def main():
 
     coord = create_random_contour(nvert=50)
-    pr.procruste(coord)
-    # Pour ne pas mailler les contours (ne pas les subdiviser), on prend h>>(longueur des contours)
-    mesh_contour(coord, "polygon.mesh", 10)
+    pr.procrustes(coord)
+    mesh_contour(coord, "polygon.mesh")
     # export_contours(3)
 
     return

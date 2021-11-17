@@ -1,15 +1,12 @@
-import database_gen
-
-from torchvision.transforms import ToTensor
-import os
-import torch
+import torch.nn.functional as func
+import torch.nn as nn
+import math
 
 from pathlib import Path
 from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
-
-from torch.utils.data import DataLoader
 
 """
 But : Prédire le nombre N1 de point dans un polygone donnée
@@ -42,11 +39,12 @@ du coup je dois :
     
 """
 
+
 class NN1PolygonDataset(Dataset):
     """
     Dataset for NN1
-    
     """
+
     def __init__(self, annotation_file: Path, polygons_dir: Path):
         self.polygons_dir = Path(polygons_dir)
         try:
@@ -54,19 +52,18 @@ class NN1PolygonDataset(Dataset):
         except FileNotFoundError as err:
             print(err)
             exit(-1)
-            
+
     def __len__(self):
         return len(self.polygons_labels)
-    
 
     def __getitem__(self, idx):
-        polygon_path = self.polygons_dir / Path(self.polygons_labels.iloc[idx,0])
+        polygon_path = self.polygons_dir / Path(self.polygons_labels.iloc[idx, 0])
         try:
             polygon = np.loadtxt(polygon_path)
         except IOError as err:
             print(err)
             exit(-1)
-        
+
         N1 = self.polygons_labels.iloc[idx, 1]
         return polygon, N1
 
@@ -76,15 +73,48 @@ class NN1PolygonDataset(Dataset):
 # idx,Nc
 
 
+class NN1(nn.Module):
 
+    def __init__(self, n_features: int):
+        super(NN1, self).__init__()
+        self.l1 = nn.Linear(n_features, 4 * n_features)
+        self.b1 = nn.BatchNorm1d(4 * n_features)
+        self.l2 = nn.Linear(4 * n_features, 4 * n_features)
+        self.b2 = nn.BatchNorm1d(4 * n_features)
+        self.l3 = nn.Linear(4 * n_features, 1)
+        self.b3 = nn.BatchNorm1d(1)
+
+    def forward(self, x):
+        x = func.relu(self.b1(self.l1(x)))
+        x = func.relu(self.b2(self.l2(x)))
+        x = self.b3(self.l3(x))
+
+
+def train_loop(dataloader: DataLoader, model: NN1, loss_fn, optimizer):
+
+    return
+
+
+def main():
+
+    # Define model's hyperparameters
+    lr = 1e-4
+    w = 1e-1
+    batch_size = 512
+    epochs = 3000
+
+    # Data
+    data_Path = Path("exports")
+    label_path = Path("exports/label.dat")
+    training_data = NN1PolygonDataset(label_path, data_Path)
+    train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+
+    # Model
+    model = NN1(4)
+
+    return
 
 
 if __name__ == "__main__":
-    data_Path = Path("exports")
-    label_path = Path("exports/label.dat")
-    training_data = NN1PolygonDataset(label_path,data_Path)
-    
-    train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
-    
-    
-    # main()
+
+    main()

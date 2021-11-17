@@ -150,7 +150,7 @@ def gen_database(ls: float,
     # Create label file
     with open(data_path / label_filename, "w+") as label_file:
         # Header
-        label_file.write("filename, N1")
+        label_file.write("filename, N1\n")
         # Generate polygons, tqdm create a progress bar
         idx = 0
         for nvert in sorted(requested_polygons.keys()):

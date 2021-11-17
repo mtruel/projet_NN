@@ -1,5 +1,7 @@
 import torch.nn.functional as func
 import torch.nn as nn
+import torch.optim as optim
+import torch
 import math
 
 from pathlib import Path
@@ -84,14 +86,51 @@ class NN1(nn.Module):
         self.l3 = nn.Linear(4 * n_features, 1)
         self.b3 = nn.BatchNorm1d(1)
 
-    def forward(self, x):
-        x = func.relu(self.b1(self.l1(x)))
-        x = func.relu(self.b2(self.l2(x)))
-        x = self.b3(self.l3(x))
+    def forward(self, x: torch.Tensor):
+        x = self.l1(x.float())
+        x = self.b1(x)
+        x = func.relu(x)
+        x = self.l2(x)
+        x = self.b2(x)
+        x = func.relu(x)
+        x = self.l3(x)
+        x = self.b3(x)
+        return torch.round(x)
 
 
-def train_loop(dataloader: DataLoader, model: NN1, loss_fn, optimizer):
+def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer):
 
+    size = len(dataloader.dataset)
+    for batch, (x, y) in enumerate(dataloader):
+
+        y_pred = model(x)
+        loss = loss_fn(y_pred, y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        loss, current = loss.item(), batch * len(x)
+        print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+    return
+
+
+def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss):
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss, correct = 0, 0
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+
+    test_loss /= num_batches
+    correct /= size
+    print(
+        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
     return
 
 
@@ -100,18 +139,29 @@ def main():
     # Define model's hyperparameters
     lr = 1e-4
     w = 1e-1
-    batch_size = 512
-    epochs = 3000
+    batch_size = 64
+    num_epochs = 1000
 
     # Data
-    data_Path = Path("exports")
-    label_path = Path("exports/label.dat")
+    data_Path = Path("data/polygons")
+    label_path = Path("data/labels")
     training_data = NN1PolygonDataset(label_path, data_Path)
     train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+    # TODO: build test data
+    test_data = NN1PolygonDataset(label_path, data_Path)
+    test_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
 
     # Model
-    model = NN1(4)
+    model = NN1(2 * 6 + 1)
 
+    # Loss function
+    loss = nn.L1Loss()
+    # Optimizer
+    opt = optim.Adam(params=model.parameters(), lr=lr)
+
+    for epoch in range(num_epochs):
+        train_loop(train_dataloader, model, loss, opt)
+        test_loop(train_dataloader, model, loss)
     return
 
 

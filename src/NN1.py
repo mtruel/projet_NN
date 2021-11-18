@@ -60,7 +60,8 @@ class NN1PolygonDataset(Dataset):
         return len(self.polygons_labels)
 
     def __getitem__(self, idx):
-        polygon_path = self.polygons_dir / Path(self.polygons_labels.iloc[idx, 0])
+        polygon_path = self.polygons_dir / \
+            Path(self.polygons_labels.iloc[idx, 0])
         try:
             polygon = np.loadtxt(polygon_path)
         except IOError as err:
@@ -135,22 +136,25 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss):
 def main():
 
     # Define model's hyperparameters
+    Nc = 6
     lr = 1e-4
     w = 1e-1
     batch_size = 512
     num_epochs = 3000
 
     # Data
-    data_Path = Path("data/polygons")
-    label_path = Path("data/labels")
+    data_Path = Path(f"data/{Nc}/polygons")
+    label_path = Path(f"data/{Nc}/labels")
     training_data = NN1PolygonDataset(label_path, data_Path)
-    train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(
+        training_data, batch_size=batch_size, shuffle=True)
     # TODO: build test data
     test_data = NN1PolygonDataset(label_path, data_Path)
-    test_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+    test_dataloader = DataLoader(
+        training_data, batch_size=batch_size, shuffle=True)
 
     # Model
-    model = NN1(2 * 4 + 1)
+    model = NN1(2 * Nc + 1)
 
     # Loss function
     loss = nn.L1Loss()
@@ -160,6 +164,11 @@ def main():
     for epoch in tqdm(range(num_epochs)):
         train_loop(train_dataloader, model, loss, opt)
         test_loop(train_dataloader, model, loss)
+
+    model_name = Path(f"model_{Nc}.pth")
+    model_w_name = Path(f"model_weights_{Nc}.pth")
+    torch.save(model, model_name)
+    torch.save(model.state_dict(), model_w_name)
     return
 
 

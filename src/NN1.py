@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch
 import math
 
+from tqdm import tqdm
 from pathlib import Path
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
@@ -95,7 +96,7 @@ class NN1(nn.Module):
         x = func.relu(x)
         x = self.l3(x)
         x = self.b3(x)
-        return torch.round(x)
+        return x
 
 
 def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer):
@@ -109,9 +110,6 @@ def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
-        loss, current = loss.item(), batch * len(x)
-        print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
     return
 
@@ -139,8 +137,8 @@ def main():
     # Define model's hyperparameters
     lr = 1e-4
     w = 1e-1
-    batch_size = 64
-    num_epochs = 1000
+    batch_size = 512
+    num_epochs = 3000
 
     # Data
     data_Path = Path("data/polygons")
@@ -152,14 +150,14 @@ def main():
     test_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
 
     # Model
-    model = NN1(2 * 6 + 1)
+    model = NN1(2 * 4 + 1)
 
     # Loss function
     loss = nn.L1Loss()
     # Optimizer
-    opt = optim.Adam(params=model.parameters(), lr=lr)
+    opt = optim.Adam(params=model.parameters(), lr=lr, weight_decay=w)
 
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs)):
         train_loop(train_dataloader, model, loss, opt)
         test_loop(train_dataloader, model, loss)
     return

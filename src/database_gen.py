@@ -13,6 +13,7 @@ import shutil
 import os
 from tqdm import tqdm
 from tqdm.auto import trange
+import gc
 import procrustes as pr
 
 
@@ -74,6 +75,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     return nb_inner_v
 
 
+# @profile
 def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
 
@@ -82,24 +84,23 @@ def create_random_contour(nvert: int) -> np.ndarray:
     :return: Vector of coordinates for the nvert vertices
     :rtype: np.ndarray
     """
-    r = 1.
     rmin = 0.7
-    theta = 0.
-    x = y = 0.
-    coord = np.ndarray((nvert, 2))
+    coord = np.zeros((nvert, 2))
 
-    for i in range(0, nvert):
-        theta = (i + np.random.rand()) / nvert * 2 * math.pi
-        r = np.random.rand() * (1 - rmin) + rmin
-        x = r * math.cos(theta)
-        y = r * math.sin(theta)
+    theta = (np.array(range(nvert)) + np.random.random(nvert)) * \
+        2. * np.pi / nvert
 
-        coord[i, 0] = x
-        coord[i, 1] = y
+    r = np.random.random(nvert) * (1 - rmin) + rmin
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+
+    coord[:, 0] = x
+    coord[:, 1] = y
 
     return coord
 
 
+# @profile
 def gen_database(Nc: int,  # Number of contour edges
                  # Dictionnary of requested polygons
                  # Request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
@@ -187,12 +188,13 @@ def gen_database(Nc: int,  # Number of contour edges
 
 def main():
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
-    request = dict({(1.0, 200), (0.2, 100)})
-    gen_database(6, request)
-    gen_database(8, request)
-    gen_database(3, request)
-    gen_database(4, request)
-    gen_database(80, request)
+    # gen_database(6, request)
+    print(f"Generating database ")
+    nb = 6000
+    for Nc in range(6, 18, 2):
+        request = dict({(1.0, nb)})
+        gen_database(Nc, request)
+        nb = nb * 2
 
     return
 

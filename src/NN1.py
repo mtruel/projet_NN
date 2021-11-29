@@ -1,6 +1,7 @@
 import torch.nn.functional as func
 import torch.nn as nn
 import torch.optim as optim
+import torch.cuda
 import torch
 import math
 
@@ -100,11 +101,11 @@ class NN1(nn.Module):
         return x
 
 
-def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer):
-
+def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer, device):
     size = len(dataloader.dataset)
+    model.train()
     for batch, (x, y) in enumerate(dataloader):
-
+        x, y = x.to(device), y.to(device)
         y_pred = model(x)
         loss = loss_fn(y_pred, y)
 
@@ -115,13 +116,15 @@ def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer
     return
 
 
-def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss):
+def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
+    model.eval()
     test_loss, correct = 0, 0
 
     with torch.no_grad():
         for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
@@ -139,8 +142,11 @@ def main():
     Nc = 6
     lr = 1e-4
     w = 1e-1
-    batch_size = 512
-    num_epochs = 3000
+    batch_size = 128
+    num_epochs = 1000
+    # Device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # device = "cpu"
 
     # Data
     data_Path = Path(f"data/{Nc}/polygons")
@@ -162,8 +168,8 @@ def main():
     opt = optim.Adam(params=model.parameters(), lr=lr, weight_decay=w)
 
     for epoch in tqdm(range(num_epochs)):
-        train_loop(train_dataloader, model, loss, opt)
-        test_loop(train_dataloader, model, loss)
+        train_loop(train_dataloader, model, loss, opt, device)
+        test_loop(train_dataloader, model, loss, device)
 
     model_name = Path(f"model_{Nc}.pth")
     model_w_name = Path(f"model_weights_{Nc}.pth")

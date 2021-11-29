@@ -30,14 +30,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     gmsh.option.setNumber("General.Verbosity", 2)
 
     gmsh.model.add("polygon")
-
-    # Number of vertices in contour
-    nb_v_in_c = len(coord)
-
-    # Constraint (h >> contour_lenght to avoid meshing (subdividing) of contours)
-    h = 10
-
-    # Vertices
+    
     for i in range(nb_v_in_c):
         x = coord[i, 0]
         y = coord[i, 1]
@@ -67,7 +60,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     # # Open mesh in GUI
     # if '-nopopup' not in sys.argv:
     #     gmsh.fltk.run()
-
+    
     gmsh.finalize()
 
     return nb_inner_v

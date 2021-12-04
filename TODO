@@ -1,0 +1,11 @@
+# TODO 
+- Faire un vrai dataset test 
+- Lancer un gros apprentissage
+- Verifier la liste des erreur communes des nn
+- Obtenir plusieurs tailles de maillages dans le dataset 
+- Comprendre pk la mémoire augmente au fur est a mesure sur le train 
+- Comprendre pk quand le dataset est plus grand ,c'est plus long
+- Avoir un apprentissage sur plafrim avec cpu efficace 
+- Avoir un apprentissage sur GPU 
+- Comprendre le probleme de mémoire à la génération des dataset
+

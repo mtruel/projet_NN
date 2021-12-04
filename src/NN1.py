@@ -11,7 +11,8 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import numpy as np
 """
 But : Prédire le nombre N1 de point dans un polygone donnée
 
@@ -107,7 +108,7 @@ def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer
     for batch, (x, y) in enumerate(dataloader):
         x, y = x.to(device), y.to(device)
         y_pred = model(x)
-        loss = loss_fn(y_pred, y)
+        loss = loss_fn(y_pred.squeeze(), y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -126,24 +127,27 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             pred = model(X)
+            pred = pred.squeeze()
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            # print(f"=======================\n{pred} \n {y}\n")
+            # print(torch.round( pred.squeeze()))
+            correct += (torch.round(pred) ==
+                        y).type(torch.float).sum().item()
 
     test_loss /= num_batches
     correct /= size
-    print(
-        f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-    return
+    # print(f"Test Error: Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f} \n", sep=' ', end='', flush=True)
+    return test_loss, correct
 
 
 def main():
 
     # Define model's hyperparameters
-    Nc = 6
+    Nc = 4
     lr = 1e-4
     w = 1e-1
-    batch_size = 128
-    num_epochs = 1000
+    batch_size = 512
+    num_epochs = 100
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # device = "cpu"
@@ -159,22 +163,72 @@ def main():
     test_dataloader = DataLoader(
         training_data, batch_size=batch_size, shuffle=True)
 
+    # Model Path
+    trace_path = Path(f"data/{Nc}") / Path("residuals")
+    model_path = Path(f"data/{Nc}") / Path(f"model_{Nc}.pth")
+    model_w_path = Path(f"data/{Nc}") / Path(f"model_weights_{Nc}.pth")
+
+    losses = np.zeros(0)
+    corrects = np.zeros(0)
+
     # Model
-    model = NN1(2 * Nc + 1)
+    # Load a pretrainned model
+    try:
+        print("Loading old model weights")
+        trace = np.loadtxt(trace_path)
+        losses = trace[:, 0]
+        corrects = trace[:, 1]
+        model = torch.load(model_path)
+        model.load_state_dict(torch.load(model_w_path))
+    except (FileNotFoundError, OSError):
+        model = NN1(2 * Nc + 1)
+        losses = np.zeros(0)
+        corrects = np.zeros(0)
+        print("Can't load old weights")
 
     # Loss function
     loss = nn.L1Loss()
     # Optimizer
     opt = optim.Adam(params=model.parameters(), lr=lr, weight_decay=w)
 
-    for epoch in tqdm(range(num_epochs)):
+    test_loss = correct = 0.
+    # Display a neat progress bar
+    pbar = tqdm(range(num_epochs))
+    for epoch in pbar:
+        # Learn 
         train_loop(train_dataloader, model, loss, opt, device)
-        test_loop(train_dataloader, model, loss, device)
+        # Test 
+        test_loss, correct = test_loop(train_dataloader, model, loss, device)
+        # Progress bar 
+        pbar.set_description(f"Epoch {epoch} / {num_epochs - 1} | Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f}")
 
-    model_name = Path(f"model_{Nc}.pth")
-    model_w_name = Path(f"model_weights_{Nc}.pth")
-    torch.save(model, model_name)
-    torch.save(model.state_dict(), model_w_name)
+        # Save in trace 
+        losses = np.append(losses, test_loss)
+        corrects = np.append(corrects, correct)
+
+        # Plot loss and accuracy 
+        plt.close()
+        plt.subplot(311)
+        plt.ylabel("Loss")
+        plt.plot(losses[-50:])
+        plt.subplot(312)
+        plt.ylabel("Loss")
+        plt.yscale("log")
+        plt.plot(losses)
+        plt.subplot(313)
+        plt.ylabel("Accuracy")
+        plt.plot(corrects)
+        plt.savefig("loss.png")
+
+    # Save accuracy and loss in residal file
+    trace = np.zeros((losses.size, 2))
+    trace[:, 0] = losses
+    trace[:, 1] = corrects
+    np.savetxt(trace_path, trace)
+    
+    # Save model weights 
+    torch.save(model, model_path)
+    torch.save(model.state_dict(), model_w_path)
     return
 
 

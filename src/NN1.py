@@ -146,8 +146,9 @@ def main():
     Nc = 4
     lr = 1e-4
     w = 1e-1
+    training_data_part = 0.8
     batch_size = 512
-    num_epochs = 100
+    num_epochs = 3000
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # device = "cpu"
@@ -155,13 +156,20 @@ def main():
     # Data
     data_Path = Path(f"data/{Nc}/polygons")
     label_path = Path(f"data/{Nc}/labels")
-    training_data = NN1PolygonDataset(label_path, data_Path)
+
+    dataset = NN1PolygonDataset(label_path, data_Path)
+    len_train = int(len(dataset)*training_data_part)
+    len_test = int(len(dataset) - len_train)
+    datasets_list = torch.utils.data.dataset.random_split(
+        dataset, (len_train, len_test))
+
+    training_dataset = datasets_list[0]
     train_dataloader = DataLoader(
-        training_data, batch_size=batch_size, shuffle=True)
-    # TODO: build test data
-    test_data = NN1PolygonDataset(label_path, data_Path)
+        training_dataset, batch_size=batch_size, shuffle=True)
+
+    test_dataset = datasets_list[1]
     test_dataloader = DataLoader(
-        training_data, batch_size=batch_size, shuffle=True)
+        test_dataset, batch_size=batch_size, shuffle=True)
 
     # Model Path
     trace_path = Path(f"data/{Nc}") / Path("residuals")
@@ -195,18 +203,19 @@ def main():
     # Display a neat progress bar
     pbar = tqdm(range(num_epochs))
     for epoch in pbar:
-        # Learn 
+        # Learn
         train_loop(train_dataloader, model, loss, opt, device)
-        # Test 
+        # Test
         test_loss, correct = test_loop(train_dataloader, model, loss, device)
-        # Progress bar 
-        pbar.set_description(f"Epoch {epoch} / {num_epochs - 1} | Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f}")
+        # Progress bar
+        pbar.set_description(
+            f"Epoch {epoch} / {num_epochs - 1} | Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f}")
 
-        # Save in trace 
+        # Save in trace
         losses = np.append(losses, test_loss)
         corrects = np.append(corrects, correct)
 
-        # Plot loss and accuracy 
+        # Plot loss and accuracy
         plt.close()
         plt.subplot(311)
         plt.ylabel("Loss")
@@ -225,8 +234,8 @@ def main():
     trace[:, 0] = losses
     trace[:, 1] = corrects
     np.savetxt(trace_path, trace)
-    
-    # Save model weights 
+
+    # Save model weights
     torch.save(model, model_path)
     torch.save(model.state_dict(), model_w_path)
     return

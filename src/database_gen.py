@@ -3,7 +3,6 @@
 import math
 # from re import L
 import numpy as np
-import matplotlib.pyplot as plt
 
 import gmsh
 import sys
@@ -24,7 +23,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     :return: Number of inner vertices
     :rtype: int
     """
-    gmsh.initialize()
+    # gmsh.initialize()
 
     # Print only gmsh warnings and errors
     gmsh.option.setNumber("General.Verbosity", 2)
@@ -54,6 +53,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     gmsh.model.geo.synchronize()
 
     # Meshing
+    # gmsh.model.mesh.setAlgorithm(2, 1, 3) #Add non points
     gmsh.model.mesh.generate(2)
 
     # Number of vertices
@@ -68,7 +68,8 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     # if '-nopopup' not in sys.argv:
     #     gmsh.fltk.run()
 
-    gmsh.finalize()
+    gmsh.model.remove()
+    # gmsh.finalize()
 
     return nb_inner_v
 
@@ -153,6 +154,8 @@ def gen_database(Nc: int,  # Number of contour edges
     (data_path / polygons_folder).mkdir(exist_ok=True)
     (data_path / meshes_folder).mkdir(exist_ok=True)
 
+    gmsh.initialize()
+
     # Create label file
     with open(data_path / label_filename, "w+") as label_file:
         # Header
@@ -181,18 +184,34 @@ def gen_database(Nc: int,  # Number of contour edges
                         polygon_file.write(str(i[0])+"\n")
                         polygon_file.write(str(i[1])+"\n")
                 idx += 1
+    gmsh.finalize()
     return
 
 
 def main():
-    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
-    request = dict({(1.0, 200), (0.2, 100)})
-    gen_database(6, request)
-    gen_database(8, request)
-    gen_database(3, request)
-    gen_database(4, request)
-    gen_database(80, request)
+    # Test one mesh
+    # gmsh.initialize()
+    # coord = create_random_contour(10)
+    # pr.procrustes(coord)
+    # mesh_contour(coord, "out.msh")
+    # gmsh.finalize()
 
+    # Gen database
+    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
+    request = dict({(1.0, 6000)})
+    gen_database(4, request)
+    request = dict({(1.0, 12000)})
+    gen_database(6, request)
+    request = dict({(1.0, 24000)})
+    gen_database(8, request)
+    request = dict({(1.0, 48000)})
+    gen_database(10, request)
+    request = dict({(1.0, 95000)})
+    gen_database(12, request)
+    request = dict({(1.0, 190000)})
+    gen_database(14, request)
+    request = dict({(1.0, 380000)})
+    gen_database(16, request)
     return
 
 

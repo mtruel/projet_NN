@@ -77,8 +77,6 @@ class NN1PolygonDataset(Dataset):
 # poly{Nc}_{idx}.dat
 # label
 # idx,Nc
-
-
 class NN1(nn.Module):
 
     def __init__(self, n_features: int):
@@ -143,12 +141,12 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
 def main():
 
     # Define model's hyperparameters
-    Nc = 4
+    Nc = 6
     lr = 1e-4
     w = 1e-1
     training_data_part = 0.8
     batch_size = 512
-    num_epochs = 3000
+    num_epochs = 6000
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # device = "cpu"
@@ -158,6 +156,8 @@ def main():
     label_path = Path(f"data/{Nc}/labels")
 
     dataset = NN1PolygonDataset(label_path, data_Path)
+
+    # Split dataset
     len_train = int(len(dataset)*training_data_part)
     len_test = int(len(dataset) - len_train)
     datasets_list = torch.utils.data.dataset.random_split(
@@ -202,6 +202,8 @@ def main():
     test_loss = correct = 0.
     # Display a neat progress bar
     pbar = tqdm(range(num_epochs))
+    # Plot created outside loop for efficient memory
+    fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
         # Learn
         train_loop(train_dataloader, model, loss, opt, device)
@@ -216,18 +218,20 @@ def main():
         corrects = np.append(corrects, correct)
 
         # Plot loss and accuracy
-        plt.close()
-        plt.subplot(311)
-        plt.ylabel("Loss")
-        plt.plot(losses[-50:])
-        plt.subplot(312)
-        plt.ylabel("Loss")
-        plt.yscale("log")
-        plt.plot(losses)
-        plt.subplot(313)
-        plt.ylabel("Accuracy")
-        plt.plot(corrects)
-        plt.savefig("loss.png")
+        if epoch % 10 == 0:
+            axes[0].clear()
+            axes[0].set(ylabel="Loss")
+            axes[0].plot(losses[-50:])
+
+            axes[1].clear()
+            axes[1].set(ylabel="Loss", yscale="log")
+            axes[1].plot(losses)
+
+            axes[2].clear()
+            axes[2].set(ylabel="Accuracy")
+            axes[2].plot(corrects)
+            fig.savefig("loss.png")
+    plt.close(fig)
 
     # Save accuracy and loss in residal file
     trace = np.zeros((losses.size, 2))
@@ -239,6 +243,11 @@ def main():
     torch.save(model, model_path)
     torch.save(model.state_dict(), model_w_path)
     return
+
+
+def load_model(Nc: int, data_path):
+    data_Path = Path(f"data/{Nc}/polygons")
+    label_path = Path(f"data/{Nc}/labels")
 
 
 if __name__ == "__main__":

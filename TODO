@@ -3,9 +3,9 @@ ok - Faire un vrai dataset test
 - Lancer un gros apprentissage
 - Verifier la liste des erreur communes des nn
 - Obtenir plusieurs tailles de maillages dans le dataset 
-- Comprendre pk la mémoire augmente au fur est a mesure sur le train 
+ok ? - Comprendre pk la mémoire augmente au fur est a mesure sur le train [pb réglé mais pas vraiment compris pk]
 - Comprendre pk quand le dataset est plus grand ,c'est plus long
 - Avoir un apprentissage sur plafrim avec cpu efficace 
 - Avoir un apprentissage sur GPU 
-- Comprendre le probleme de mémoire à la génération des dataset
+ok - Comprendre le probleme de mémoire à la génération des dataset | init only once gmsh
 

@@ -3,7 +3,6 @@
 import math
 # from re import L
 import numpy as np
-import matplotlib.pyplot as plt
 
 import gmsh
 import sys
@@ -12,8 +11,6 @@ from pathlib import Path
 import shutil
 import os
 from tqdm import tqdm
-from tqdm.auto import trange
-import gc
 import procrustes as pr
 
 
@@ -26,7 +23,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     :return: Number of inner vertices
     :rtype: int
     """
-    gmsh.initialize()
+    # gmsh.initialize()
 
     # Print only gmsh warnings and errors
     gmsh.option.setNumber("General.Verbosity", 2)
@@ -56,6 +53,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     gmsh.model.geo.synchronize()
 
     # Meshing
+    # gmsh.model.mesh.setAlgorithm(2, 1, 3) #Add non points
     gmsh.model.mesh.generate(2)
 
     # Number of vertices
@@ -70,12 +68,12 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     # if '-nopopup' not in sys.argv:
     #     gmsh.fltk.run()
 
-    gmsh.finalize()
+    gmsh.model.remove()
+    # gmsh.finalize()
 
     return nb_inner_v
 
 
-# @profile
 def create_random_contour(nvert: int) -> np.ndarray:
     """Create a random polygonal contour with nvert vertices
 
@@ -84,23 +82,24 @@ def create_random_contour(nvert: int) -> np.ndarray:
     :return: Vector of coordinates for the nvert vertices
     :rtype: np.ndarray
     """
+    r = 1.
     rmin = 0.7
-    coord = np.zeros((nvert, 2))
+    theta = 0.
+    x = y = 0.
+    coord = np.ndarray((nvert, 2))
 
-    theta = (np.array(range(nvert)) + np.random.random(nvert)) * \
-        2. * np.pi / nvert
+    for i in range(0, nvert):
+        theta = (i + np.random.rand()) / nvert * 2 * math.pi
+        r = np.random.rand() * (1 - rmin) + rmin
+        x = r * math.cos(theta)
+        y = r * math.sin(theta)
 
-    r = np.random.random(nvert) * (1 - rmin) + rmin
-    x = r * np.cos(theta)
-    y = r * np.sin(theta)
-
-    coord[:, 0] = x
-    coord[:, 1] = y
+        coord[i, 0] = x
+        coord[i, 1] = y
 
     return coord
 
 
-# @profile
 def gen_database(Nc: int,  # Number of contour edges
                  # Dictionnary of requested polygons
                  # Request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
@@ -155,6 +154,8 @@ def gen_database(Nc: int,  # Number of contour edges
     (data_path / polygons_folder).mkdir(exist_ok=True)
     (data_path / meshes_folder).mkdir(exist_ok=True)
 
+    gmsh.initialize()
+
     # Create label file
     with open(data_path / label_filename, "w+") as label_file:
         # Header
@@ -183,19 +184,34 @@ def gen_database(Nc: int,  # Number of contour edges
                         polygon_file.write(str(i[0])+"\n")
                         polygon_file.write(str(i[1])+"\n")
                 idx += 1
+    gmsh.finalize()
     return
 
 
 def main():
-    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
-    # gen_database(6, request)
-    print(f"Generating database ")
-    nb = 6000
-    for Nc in range(6, 18, 2):
-        request = dict({(1.0, nb)})
-        gen_database(Nc, request)
-        nb = nb * 2
+    # Test one mesh
+    # gmsh.initialize()
+    # coord = create_random_contour(10)
+    # pr.procrustes(coord)
+    # mesh_contour(coord, "out.msh")
+    # gmsh.finalize()
 
+    # Gen database
+    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
+    request = dict({(1.0, 6000)})
+    gen_database(4, request)
+    request = dict({(1.0, 12000)})
+    gen_database(6, request)
+    request = dict({(1.0, 24000)})
+    gen_database(8, request)
+    request = dict({(1.0, 48000)})
+    gen_database(10, request)
+    request = dict({(1.0, 95000)})
+    gen_database(12, request)
+    request = dict({(1.0, 190000)})
+    gen_database(14, request)
+    request = dict({(1.0, 380000)})
+    gen_database(16, request)
     return
 
 

@@ -5,6 +5,7 @@ import torch.cuda
 import torch
 import math
 
+import sys
 from tqdm import tqdm
 from pathlib import Path
 from torch.utils.data import Dataset
@@ -138,24 +139,26 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     return test_loss, correct
 
 
-def main():
+def main(Nc: int):
 
     # Define model's hyperparameters
-    Nc = 6
+    # Nc = 6
     lr = 1e-4
     w = 1e-1
     training_data_part = 0.8
     batch_size = 512
-    num_epochs = 6000
+    num_epochs = 3000
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # device = "cpu"
 
     # Data
-    data_Path = Path(f"data/{Nc}/polygons")
-    label_path = Path(f"data/{Nc}/labels")
+    data_path = Path(f"data/{Nc}")
 
-    dataset = NN1PolygonDataset(label_path, data_Path)
+    polygons_path = data_path / Path(f"polygons")
+    label_path = data_path / Path(f"labels")
+
+    dataset = NN1PolygonDataset(label_path, polygons_path)
 
     # Split dataset
     len_train = int(len(dataset)*training_data_part)
@@ -172,9 +175,9 @@ def main():
         test_dataset, batch_size=batch_size, shuffle=True)
 
     # Model Path
-    trace_path = Path(f"data/{Nc}") / Path("residuals")
-    model_path = Path(f"data/{Nc}") / Path(f"model_{Nc}.pth")
-    model_w_path = Path(f"data/{Nc}") / Path(f"model_weights_{Nc}.pth")
+    trace_path = data_path / Path("residuals")
+    model_path = data_path / Path(f"model_{Nc}.pth")
+    model_w_path = data_path / Path(f"model_weights_{Nc}.pth")
 
     losses = np.zeros(0)
     corrects = np.zeros(0)
@@ -230,7 +233,7 @@ def main():
             axes[2].clear()
             axes[2].set(ylabel="Accuracy")
             axes[2].plot(corrects)
-            fig.savefig("loss.png")
+            fig.savefig(data_path / Path("loss.png"))
     plt.close(fig)
 
     # Save accuracy and loss in residal file
@@ -251,5 +254,9 @@ def load_model(Nc: int, data_path):
 
 
 if __name__ == "__main__":
-
-    main()
+    arguments = sys.argv
+    del arguments[0]
+    print(f"Arg list : {arguments}")
+    for Nc in arguments:
+        print(f"Learning for {Nc} boundary vertices")
+        main(int(Nc))

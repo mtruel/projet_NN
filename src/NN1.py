@@ -14,35 +14,38 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+
+import database_gen
+
+
 """
-But : Prédire le nombre N1 de point dans un polygone donnée
-
-L'approcimation s'appelle N1a
-
 Feedforward NN with multilayer perceptrons
 
-for 
-Nc edges 
-input : 
+Goal: Predict the number N1 of points to put inside a given polygonal contour.
+The approximation given is called N1a.
+
+
+for
+Nc edges
+input :
 Pc
 ls
 
 Loss function
 L(N1,N1a)=|N1-N1A|
 
-Algo : 
-while required number of iterations is not reached do
-    foreach training example in D do
+Algorihtm :
+while required number of iterations is not reached, do :
+    for each training example in D, do :
         Compute N1a I using current parameters
-        Calculate loss function 
-        backprop 
+        Calculate loss function
+        backprop
         Update WK using Adam learning rate optimization
     end
 end
 
-du coup je dois : 
-    creer un tenseur avec Ntrain elts D=(Pc,ls,N1)
-    
+du coup je dois :
+    creer un tenseur avec Ntrain elts D=(Pc,ls,N1)m
 """
 
 
@@ -51,6 +54,7 @@ class NN1PolygonDataset(Dataset):
     Dataset for NN1
     """
 
+    # Constructor
     def __init__(self, annotation_file: Path, polygons_dir: Path):
         self.polygons_dir = Path(polygons_dir)
         try:
@@ -102,6 +106,18 @@ class NN1(nn.Module):
 
 
 def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer, device):
+    """Takes the training database with DataLoader and trains the NN1:
+    Edits model and loss function
+
+    :param Dataloader dataloader: 
+    :param NN1 model: NN1 network model 
+    :param nn.L1Loss loss_fn: loss function
+    :param optimizer: Type of optimizer (here Adam)
+    :param device: cuda or CPU
+
+    :return:
+    :rtype: np.ndarray
+    """
     size = len(dataloader.dataset)
     model.train()
     for batch, (x, y) in enumerate(dataloader):
@@ -117,6 +133,20 @@ def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer
 
 
 def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
+    """Takes the test database with DataLoader and tests the NN1:
+    Uses model and loss function to predict
+
+    :param Dataloader dataloader: 
+    :param NN1 model: NN1 network model
+    :param nn.L1Loss loss_fn: loss function
+    :param optimizer: Type of optimizer (here Adam)
+    :param device: cuda or CPU
+
+    :return: average of all losses
+    :rtype: double
+    :return: average of correct guesses
+    :rtype: double
+    """
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -140,7 +170,9 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
 
 
 def main(Nc: int):
-
+    """
+    A DECOUPER EN FONCTIONS PLUS TARD
+    """
     # Define model's hyperparameters
     # Nc = 6
     lr = 1e-4
@@ -248,9 +280,33 @@ def main(Nc: int):
     return
 
 
-def load_model(Nc: int, data_path):
-    data_Path = Path(f"data/{Nc}/polygons")
-    label_path = Path(f"data/{Nc}/labels")
+def predict():
+    """Create random contour and compute predicted Nc with the loaded NN
+
+    :return: Nc predicted number of inner nodes
+    :rtype: int
+    """
+    Nc = 4
+    ls = 1.0
+    input = np.zeros(2*Nc+1)
+    input[0] = ls
+    coords = database_gen.create_random_contour(Nc)
+    for i in range(Nc, 2):
+        input[1+i] = coords[i, 0]
+        input[1+i+1] = coords[i, 1]
+    print(input)
+
+    data_path = Path(f"data/{Nc}")
+
+    model_path = data_path / Path(f"model_{Nc}.pth")
+    model_w_path = data_path / Path(f"model_weights_{Nc}.pth")
+
+    model = torch.load(model_path)
+    model.load_state_dict(torch.load(model_w_path))
+
+    model.eval()
+
+    return model(torch.Tensor(input))  # /!\ Ne fonctionne pas /!\
 
 
 if __name__ == "__main__":
@@ -260,3 +316,6 @@ if __name__ == "__main__":
     for Nc in arguments:
         print(f"Learning for {Nc} boundary vertices")
         main(int(Nc))
+
+
+    #print(load_model())

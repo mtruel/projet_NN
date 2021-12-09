@@ -14,6 +14,8 @@ from tqdm import tqdm
 import procrustes as pr
 
 
+###########################   NN1   ###########################
+
 def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     """Simple .mesh generation with Gmsh API from a given contour
 
@@ -188,6 +190,40 @@ def gen_database(Nc: int,  # Number of contour edges
     return
 
 
+###########################   NN2   ###########################
+
+def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
+    """
+    Creates uniform grided square arond the contour
+
+    :param np.ndarray coord: Coordinates of the contour points
+
+    :return: Coordinates of the grid 
+    :rtype: np.ndarray
+    """
+    print(coord)
+    # Grid scale factor
+    Gscale_factor = 0.05
+    Gscale = Gscale_factor * ls  # size of mesh grid
+
+    # Adaptative square size
+    # Not useful : just take size 1 ????
+    Gscale_factor_side = 1.1
+    xymax = np.amax(np.absolute(coord))  # max coordinate
+    Gside = Gscale_factor_side*xymax
+
+    Gside = 1
+    nnodes = int(Gside*2/Gscale)
+
+    # square_coord = np.zeros((nnodes, nnodes))
+    # for i in range(nnodes):
+    #     square_coord[i] = np.arange(-Gside, Gside, Gscale)
+    # print(square_coord)
+    # print(xymax, Gside)
+
+    return
+
+
 def main():
     # Test one mesh
     # gmsh.initialize()
@@ -198,20 +234,24 @@ def main():
 
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
-    request = dict({(1.0, 6000)})
-    gen_database(4, request)
-    request = dict({(1.0, 12000)})
-    gen_database(6, request)
-    request = dict({(1.0, 24000)})
-    gen_database(8, request)
-    request = dict({(1.0, 48000)})
-    gen_database(10, request)
-    request = dict({(1.0, 95000)})
-    gen_database(12, request)
-    request = dict({(1.0, 190000)})
-    gen_database(14, request)
-    request = dict({(1.0, 380000)})
-    gen_database(16, request)
+
+    # request = dict({(1.0, 6000)})
+    # gen_database(4, request)
+    # request = dict({(1.0, 12000)})
+    # gen_database(6, request)
+    # request = dict({(1.0, 24000)})
+    # gen_database(8, request)
+    # request = dict({(1.0, 48000)})
+    # gen_database(10, request)
+    # request = dict({(1.0, 95000)})
+    # gen_database(12, request)
+    # request = dict({(1.0, 190000)})
+    # gen_database(14, request)
+    # request = dict({(1.0, 380000)})
+    # gen_database(16, request)
+
+    contour = create_random_contour(4)
+    create_grid(contour, 1.0)
     return
 
 

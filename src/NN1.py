@@ -143,9 +143,9 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     :param device: cuda or CPU
 
     :return: average of all losses
-    :rtype: double
+    :rtype: float
     :return: average of correct guesses
-    :rtype: double
+    :rtype: float
     """
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -200,11 +200,11 @@ def main(Nc: int):
 
     training_dataset = datasets_list[0]
     train_dataloader = DataLoader(
-        training_dataset, batch_size=batch_size, shuffle=True)
+        training_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
 
     test_dataset = datasets_list[1]
     test_dataloader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=True)
+        test_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
 
     # Model Path
     trace_path = data_path / Path("residuals")
@@ -317,5 +317,4 @@ if __name__ == "__main__":
         print(f"Learning for {Nc} boundary vertices")
         main(int(Nc))
 
-
-    #print(load_model())
+    # print(load_model())

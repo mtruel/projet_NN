@@ -225,8 +225,8 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
 
 
 def main():
-    # Test one mesh
     # gmsh.initialize()
+    # Test one mesh
     # coord = create_random_contour(10)
     # pr.procrustes(coord)
     # mesh_contour(coord, "out.msh")

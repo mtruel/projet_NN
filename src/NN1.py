@@ -5,7 +5,10 @@ import torch.cuda
 import torch
 import math
 
+import time
+from dataclasses import dataclass
 import sys
+import shutil
 from tqdm import tqdm
 from pathlib import Path
 from torch.utils.data import Dataset
@@ -13,12 +16,14 @@ from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+import os
+"""
+But : Prédire le nombre N1 de point dans un polygone donnée
 
 import database_gen
 
 
-"""
+
 Feedforward NN with multilayer perceptrons
 
 Goal: Predict the number N1 of points to put inside a given polygonal contour.
@@ -45,7 +50,8 @@ while required number of iterations is not reached, do :
 end
 
 du coup je dois :
-    creer un tenseur avec Ntrain elts D=(Pc,ls,N1)m
+    creer un tenseur avec Ntrain elts D=(Pc,ls,N1)
+
 """
 
 
@@ -169,114 +175,221 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     return test_loss, correct
 
 
-def main(Nc: int):
+@dataclass
+class nn1_parameters:
     """
-    A DECOUPER EN FONCTIONS PLUS TARD
+    DataClass storing parameters for the learning
     """
-    # Define model's hyperparameters
-    # Nc = 6
-    lr = 1e-4
-    w = 1e-1
-    training_data_part = 0.8
-    batch_size = 512
-    num_epochs = 3000
-    # Device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    # device = "cpu"
+    # Parameters
+    # Number of inner vertices
+    Nc: int
+    # Hyperparameters
+    # Learning rate
+    lr: float
+    # Weight decay
+    w: float
+    # Size of a batch
+    batch_size: int
+    # Number of epoch to compute
+    num_epochs: int = 100
+    # Ratio of quantity of training data vs test data
+    training_data_ratio: float = 0.8
+    # Shuffle data
+    shuffle: bool = False
 
-    # Data
-    data_path = Path(f"data/{Nc}")
+    # Delete a previous model
+    clean_start: bool = False
+    # Paths
+    # Main data folder
+    data_path: Path = None
+    polygons_path: Path = None
+    label_path: Path = None
 
-    polygons_path = data_path / Path(f"polygons")
-    label_path = data_path / Path(f"labels")
+    trace_path: Path = None
+    model_path: Path = None
+    model_w_path: Path = None
+    plot_path: Path = None
 
-    dataset = NN1PolygonDataset(label_path, polygons_path)
+    # Device used for computation
+    device: str = None
 
-    # Split dataset
-    len_train = int(len(dataset)*training_data_part)
+    # Comment about execution
+    execution_notes: str = ""
+
+    history_folder: Path = Path("history/nn1")
+
+    log_file: Path = Path("last_executions.log")
+
+    def __post_init__(self):
+        self.lauch_date: str = time.asctime()
+
+        # Paths
+        if self.data_path is None:
+            self.data_path = Path(f"data/{self.Nc}")
+            self.polygons_path = self.data_path / Path(f"polygons")
+            self.label_path = self.data_path / Path(f"labels")
+            self.model_path = self.data_path / Path(f"model_{self.Nc}.pth")
+            self.model_w_path = self.data_path / \
+                Path(f"model_weights_{self.Nc}.pth")
+
+        if self.trace_path is None:
+            self.trace_path = self.data_path / Path("trace.txt")
+        if self.plot_path is None:
+            self.plot_path = self.data_path / Path(f"plot_{self.Nc}.png")
+
+        if self.clean_start:
+            shutil.rmtree(self.model_path, ignore_errors=True)
+            shutil.rmtree(self.model_w_path, ignore_errors=True)
+            shutil.rmtree(self.trace_path, ignore_errors=True)
+            shutil.rmtree(self.plot_path, ignore_errors=True)
+
+        self.current_epoch: int = 0
+        # Loss and accuracy data
+        self.loss_history: np.ndarray = np.zeros(0)
+        self.accuracy_history: np.ndarray = np.zeros(0)
+        if not(self.clean_start):
+            try:
+                trace = np.loadtxt(self.trace_path)
+                self.loss_history = trace[:, 0]
+                self.accuracy_history = trace[:, 1]
+                self.current_epoch = self.loss_history.size
+                print("Ancienne trace chargée")
+            except (OSError):
+                print("Pas d'ancienne trace")
+
+        # Plot
+        self.fig, self.axes = plt.subplots(nrows=3)
+
+        # Define device
+        if self.device is None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Header
+        self.header_str = f"{self.lauch_date} | Nc={self.Nc}\n"
+        self.header_str += f"        lr={self.lr}, w={self.w}, batch_size={self.batch_size}, initial_epoch={self.current_epoch}, num_epoch={self.num_epochs}, train_data_ratio={self.training_data_ratio} shuffle={self.shuffle}\n"
+        self.header_str += self.execution_notes + "\n"
+
+        # Log file
+        with open(self.log_file, 'a') as f:
+            f.write(self.header_str + "\n")
+
+        # History folder
+        # create tree
+        try:
+            self.history_folder = self.history_folder / \
+                Path(f"{self.lauch_date}")
+            os.makedirs(self.history_folder)
+        except FileExistsError:
+            pass
+
+        return
+
+    def add_epoch(self, avg_loss: float, accuracy: float):
+        self.loss_history = np.append(self.loss_history, avg_loss)
+        self.accuracy_history = np.append(self.accuracy_history, accuracy)
+        self.current_epoch += 1
+        return
+
+    def update_plot(self):
+        self.axes[0].clear()
+        self.axes[0].set(ylabel="Avg Loss")
+        self.axes[0].plot(self.loss_history[-50:])
+        self.axes[0].set_title(self.header_str, {'fontsize': 6})
+
+        self.axes[1].clear()
+        self.axes[1].set(ylabel="Avg Loss", yscale="log")
+        self.axes[1].plot(self.loss_history)
+
+        self.axes[2].clear()
+        self.axes[2].set(ylabel="Accuracy")
+        self.axes[2].plot(self.accuracy_history)
+        self.fig.savefig(self.plot_path)
+        shutil.copyfile(self.plot_path, self.history_folder /
+                        self.plot_path.name)
+        return
+
+    def save_trace(self):
+        trace = np.zeros((self.loss_history.size, 2))
+        trace[:, 0] = self.loss_history
+        trace[:, 1] = self.accuracy_history
+        np.savetxt(self.trace_path, trace, header=self.header_str)
+        shutil.copyfile(self.trace_path, self.history_folder /
+                        self.trace_path.name)
+        return
+
+    def save_model(self, model):
+        torch.save(model, self.model_path)
+        torch.save(model.state_dict(), self.model_w_path)
+        shutil.copyfile(self.model_path, self.history_folder /
+                        self.model_path.name)
+        shutil.copyfile(self.model_w_path, self.history_folder /
+                        self.model_w_path.name)
+
+
+def train_model(parameters: nn1_parameters):
+    # Chargement des données
+    dataset = NN1PolygonDataset(
+        parameters.label_path, parameters.polygons_path)
+
+    len_train = int(len(dataset)*parameters.training_data_ratio)
     len_test = int(len(dataset) - len_train)
+    # Split the dataset
     datasets_list = torch.utils.data.dataset.random_split(
         dataset, (len_train, len_test))
 
     training_dataset = datasets_list[0]
     train_dataloader = DataLoader(
-        training_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+        training_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
 
     test_dataset = datasets_list[1]
     test_dataloader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
-
-    # Model Path
-    trace_path = data_path / Path("residuals")
-    model_path = data_path / Path(f"model_{Nc}.pth")
-    model_w_path = data_path / Path(f"model_weights_{Nc}.pth")
-
-    losses = np.zeros(0)
-    corrects = np.zeros(0)
+        test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
 
     # Model
+    model = NN1(2 * parameters.Nc + 1)
     # Load a pretrainned model
-    try:
-        print("Loading old model weights")
-        trace = np.loadtxt(trace_path)
-        losses = trace[:, 0]
-        corrects = trace[:, 1]
-        model = torch.load(model_path)
-        model.load_state_dict(torch.load(model_w_path))
-    except (FileNotFoundError, OSError):
-        model = NN1(2 * Nc + 1)
-        losses = np.zeros(0)
-        corrects = np.zeros(0)
-        print("Can't load old weights")
+    if not(parameters.clean_start):
+        try:
+            model = torch.load(parameters.model_path)
+            model.load_state_dict(torch.load(parameters.model_w_path))
+            print("Old model weights loaded")
+        except (FileNotFoundError):
+            print("Can't load old weights")
 
     # Loss function
     loss = nn.L1Loss()
     # Optimizer
-    opt = optim.Adam(params=model.parameters(), lr=lr, weight_decay=w)
+    opt = optim.Adam(params=model.parameters(),
+                     lr=parameters.lr, weight_decay=parameters.w)
 
-    test_loss = correct = 0.
     # Display a neat progress bar
-    pbar = tqdm(range(num_epochs))
+    pbar = tqdm(range(parameters.num_epochs))
     # Plot created outside loop for efficient memory
     fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
         # Learn
-        train_loop(train_dataloader, model, loss, opt, device)
+        train_loop(train_dataloader, model, loss, opt, parameters.device)
         # Test
-        test_loss, correct = test_loop(train_dataloader, model, loss, device)
-        # Progress bar
-        pbar.set_description(
-            f"Epoch {epoch} / {num_epochs - 1} | Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f}")
+        avg_loss, accuracy = test_loop(
+            test_dataloader, model, loss, parameters.device)
 
         # Save in trace
-        losses = np.append(losses, test_loss)
-        corrects = np.append(corrects, correct)
+        parameters.add_epoch(avg_loss, accuracy)
 
-        # Plot loss and accuracy
-        if epoch % 10 == 0:
-            axes[0].clear()
-            axes[0].set(ylabel="Loss")
-            axes[0].plot(losses[-50:])
+        # Progress bar
+        pbar.set_description(
+            f"Epoch {parameters.current_epoch} | Accuracy: {(100*accuracy):>0.4f}%, Avg loss: {avg_loss:>8f}")
 
-            axes[1].clear()
-            axes[1].set(ylabel="Loss", yscale="log")
-            axes[1].plot(losses)
+        # save plot , trace and model
+        if epoch % 10 == 1:
+            parameters.update_plot()
+            parameters.save_trace()
+            parameters.save_model(model)
 
-            axes[2].clear()
-            axes[2].set(ylabel="Accuracy")
-            axes[2].plot(corrects)
-            fig.savefig(data_path / Path("loss.png"))
-    plt.close(fig)
-
-    # Save accuracy and loss in residal file
-    trace = np.zeros((losses.size, 2))
-    trace[:, 0] = losses
-    trace[:, 1] = corrects
-    np.savetxt(trace_path, trace)
-
-    # Save model weights
-    torch.save(model, model_path)
-    torch.save(model.state_dict(), model_w_path)
+    # save plot , trace and model
+    parameters.update_plot()
+    parameters.save_trace()
+    parameters.save_model(model)
     return
 
 
@@ -310,11 +423,12 @@ def predict():
 
 
 if __name__ == "__main__":
-    arguments = sys.argv
-    del arguments[0]
-    print(f"Arg list : {arguments}")
-    for Nc in arguments:
-        print(f"Learning for {Nc} boundary vertices")
-        main(int(Nc))
+    train_model(nn1_parameters(Nc=6,
+                               lr=1e-4,
+                               w=1e-1,
+                               batch_size=512,
+                               num_epochs=3000,
+                               shuffle=True,
+                               clean_start=False,
+                               ))
 
-    # print(load_model())

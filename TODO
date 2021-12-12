@@ -1,11 +1,15 @@
 # TODO 
-ok - Faire un vrai dataset test 
-- Lancer un gros apprentissage
+ok - Faire un vrai dataset test , c'est fait
+ok - Lancer un gros apprentissage : lancé sur plafrim 
 - Verifier la liste des erreur communes des nn
 - Obtenir plusieurs tailles de maillages dans le dataset 
 ok ? - Comprendre pk la mémoire augmente au fur est a mesure sur le train [pb réglé mais pas vraiment compris pk]
 - Comprendre pk quand le dataset est plus grand ,c'est plus long
 - Avoir un apprentissage sur plafrim avec cpu efficace 
+    sur le pc de Lucas , au debut ça allait vite (8it/s) puis moins (2s/it)
 - Avoir un apprentissage sur GPU 
+    ne marche pas sur plafrim car torch ne supporte plus le GPU K40
+    -> recompiler torch from source : pb ,besoin d'anaconda et ya pas 
+    -> utiliser une version de torch plus récente 
 ok - Comprendre le probleme de mémoire à la génération des dataset | init only once gmsh
 

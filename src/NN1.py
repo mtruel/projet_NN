@@ -197,6 +197,8 @@ class nn1_parameters:
     # Shuffle data
     shuffle: bool = False
 
+    # Nums workers for data loading
+    num_workers: int = 1
     # Delete a previous model
     clean_start: bool = False
     # Paths
@@ -339,11 +341,11 @@ def train_model(parameters: nn1_parameters):
 
     training_dataset = datasets_list[0]
     train_dataloader = DataLoader(
-        training_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
+        training_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle, num_workers=parameters.num_workers)
 
     test_dataset = datasets_list[1]
     test_dataloader = DataLoader(
-        test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
+        test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle, num_workers=parameters.num_workers)
 
     # Model
     model = NN1(2 * parameters.Nc + 1)
@@ -423,6 +425,9 @@ def predict():
 
 
 if __name__ == "__main__":
+    torch.set_num_threads(4)
+    print(f"Torch uses {torch.get_num_threads()} threads")
+
     train_model(nn1_parameters(Nc=6,
                                lr=1e-4,
                                w=1e-1,
@@ -430,5 +435,6 @@ if __name__ == "__main__":
                                num_epochs=3000,
                                shuffle=True,
                                clean_start=False,
+                               num_workers=8,
+                               device="cpu"
                                ))
-

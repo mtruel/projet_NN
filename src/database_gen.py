@@ -210,7 +210,7 @@ def gen_database(Nc: int,  # Number of contour edges
 
 ###########################   NN2   ###########################
 
-def create_grid(coord, ls: float) -> np.ndarray:
+def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     """
     Creates uniform grided square arond the contour
 
@@ -218,28 +218,21 @@ def create_grid(coord, ls: float) -> np.ndarray:
 
     :return: Coordinates of the grid
     :rtype: np.ndarray
-
-
-
-
     """
     # Grid scale factor
-    Gscale_factor = 0.01
+    Gscale_factor = 0.05
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(1/Gscale)
-    if (nnodes%2 == 1): #On veut un noeud a l'origine du repere donc nnodes pair
-        nnodes += 1
     grid = np.zeros(((nnodes+1)**2,(nnodes+1)**2))
     x = -Gscale*nnodes/2 #On commence en bas a gauche du grid
-    print(x)
     y = -Gscale*nnodes/2
     for i in range(nnodes+1):
         for j in range(nnodes+1):
             grid[i+j,0] = x
             grid[i+j,1] = y
             x += Gscale
-            print(i,j)
-            print(grid[i+j,0],grid[i+j,1])
+            # print(i,j)
+            # print(grid[i+j,0],grid[i+j,1])
         x = -Gscale*nnodes/2
         y += Gscale
     return grid
@@ -256,8 +249,8 @@ def main():
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    request = dict({(1.0, 1)})
-    gen_database(6, request)
+    # request = dict({(1.0, 1)})
+    # gen_database(6, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})
@@ -271,8 +264,8 @@ def main():
     # request = dict({(1.0, 380000)})
     # gen_database(16, request)
 
-    # contour = create_random_contour(4)
-    # create_grid(contour, 1.0)
+    contour = create_random_contour(4)
+    create_grid(contour, 1.0)
     return
 
 

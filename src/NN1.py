@@ -55,131 +55,33 @@ du coup je dois :
 """
 
 
-class NN1PolygonDataset(Dataset):
-    """
-    Dataset for NN1
-    """
-
-    # Constructor
-    def __init__(self, annotation_file: Path, polygons_dir: Path):
-        self.polygons_dir = Path(polygons_dir)
-        try:
-            self.polygons_labels = pd.read_csv(annotation_file)
-        except FileNotFoundError as err:
-            print(err)
-            exit(-1)
-
-    def __len__(self):
-        return len(self.polygons_labels)
-
-    def __getitem__(self, idx):
-        polygon_path = self.polygons_dir / \
-            Path(self.polygons_labels.iloc[idx, 0])
-        try:
-            polygon = np.loadtxt(polygon_path)
-        except IOError as err:
-            print(err)
-            exit(-1)
-
-        N1 = self.polygons_labels.iloc[idx, 1]
-        return polygon, N1
-
-
-# poly{Nc}_{idx}.dat
-# label
-# idx,Nc
-class NN1(nn.Module):
-
-    def __init__(self, n_features: int):
-        super(NN1, self).__init__()
-        self.l1 = nn.Linear(n_features, 4 * n_features)
-        self.b1 = nn.BatchNorm1d(4 * n_features)
-        self.l2 = nn.Linear(4 * n_features, 4 * n_features)
-        self.b2 = nn.BatchNorm1d(4 * n_features)
-        self.l3 = nn.Linear(4 * n_features, 1)
-        self.b3 = nn.BatchNorm1d(1)
-
-    def forward(self, x: torch.Tensor):
-        x = self.l1(x.float())
-        x = self.b1(x)
-        x = func.relu(x)
-        x = self.l2(x)
-        x = self.b2(x)
-        x = func.relu(x)
-        x = self.l3(x)
-        x = self.b3(x)
-        return x
-
-
-def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer, device):
-    """Takes the training database with DataLoader and trains the NN1:
-    Edits model and loss function
-
-    :param Dataloader dataloader: 
-    :param NN1 model: NN1 network model 
-    :param nn.L1Loss loss_fn: loss function
-    :param optimizer: Type of optimizer (here Adam)
-    :param device: cuda or CPU
-
-    :return:
-    :rtype: np.ndarray
-    """
-    size = len(dataloader.dataset)
-    model.train()
-    for batch, (x, y) in enumerate(dataloader):
-        x, y = x.to(device), y.to(device)
-        y_pred = model(x)
-        loss = loss_fn(y_pred.squeeze(), y)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-    return
-
-
-def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
-    """Takes the test database with DataLoader and tests the NN1:
-    Uses model and loss function to predict
-
-    :param Dataloader dataloader: 
-    :param NN1 model: NN1 network model
-    :param nn.L1Loss loss_fn: loss function
-    :param optimizer: Type of optimizer (here Adam)
-    :param device: cuda or CPU
-
-    :return: average of all losses
-    :rtype: float
-    :return: average of correct guesses
-    :rtype: float
-    """
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    model.eval()
-    test_loss, correct = 0, 0
-
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            pred = model(X)
-            pred = pred.squeeze()
-            test_loss += loss_fn(pred, y).item()
-            # print(f"=======================\n{pred} \n {y}\n")
-            # print(torch.round( pred.squeeze()))
-            correct += (torch.round(pred) ==
-                        y).type(torch.float).sum().item()
-
-    test_loss /= num_batches
-    correct /= size
-    # print(f"Test Error: Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f} \n", sep=' ', end='', flush=True)
-    return test_loss, correct
-
-
 @dataclass
-class nn1_parameters:
+class nn1_dataclass:
+    """Utility dataclass for NN1, storing parameters, and utiliy functions
+
+    Store parameters, plot loss and accuracy, save model, save trace
+    :param Nc int:
+    :param lr float:
+    :param w float:
+    :param batch_size int:
+    :param num_epochs int:
+    :param training_data_ratio:
+    :param shuffle bool:
+    :param num_workers int:
+    :param clean_start bool:
+    :param data_path Path:
+    :param polygons_path Path:
+    :param label_path Path:
+    :param trace_path Path:
+    :param model_path Path:
+    :param model_w_path Path:
+    :param plot_path Path:
+    :param device str:
+    :param execution_notes str:
+    :param output_path Path:
+    :param history_folder Path:
     """
-    DataClass storing parameters for the learning
-    """
+    
     # Parameters
     # Number of inner vertices
     Nc: int
@@ -289,6 +191,11 @@ class nn1_parameters:
             os.makedirs(self.history_folder)
         except FileExistsError:
             pass
+        
+        try:
+            os.makedirs(self.output_folder)
+        except FileExistsError:
+            pass
 
         return
 
@@ -334,7 +241,133 @@ class nn1_parameters:
                         self.model_w_path.name)
 
 
-def train_model(parameters: nn1_parameters):
+class NN1PolygonDataset(Dataset):
+    """
+    Dataset for NN1
+    
+    __init__ loads the label file
+    __getitem__ return an element of the database
+    """
+
+    # Constructor
+    def __init__(self, annotation_file: Path, polygons_dir: Path):
+        self.polygons_dir = Path(polygons_dir)
+        try:
+            self.polygons_labels = pd.read_csv(annotation_file)
+        except FileNotFoundError as err:
+            print(err)
+            exit(-1)
+
+    def __len__(self):
+        return len(self.polygons_labels)
+
+    def __getitem__(self, idx):
+        polygon_path = self.polygons_dir / \
+            Path(self.polygons_labels.iloc[idx, 0])
+        try:
+            polygon = np.loadtxt(polygon_path)
+        except IOError as err:
+            print(err)
+            exit(-1)
+
+        N1 = self.polygons_labels.iloc[idx, 1]
+        return polygon, N1
+
+
+# poly{Nc}_{idx}.dat
+# label
+# idx,Nc
+class NN1(nn.Module):
+    """Neural Network 1
+    Takes ls and coordinates of contour to mesh 
+    Returns an estimate of the number of inner point Nc 
+    """
+    def __init__(self, n_features: int):
+        super(NN1, self).__init__()
+        self.l1 = nn.Linear(n_features, 4 * n_features)
+        self.b1 = nn.BatchNorm1d(4 * n_features)
+        self.l2 = nn.Linear(4 * n_features, 4 * n_features)
+        self.b2 = nn.BatchNorm1d(4 * n_features)
+        self.l3 = nn.Linear(4 * n_features, 1)
+        self.b3 = nn.BatchNorm1d(1)
+
+    def forward(self, x: torch.Tensor):
+        x = self.l1(x.float())
+        x = self.b1(x)
+        x = func.relu(x)
+        x = self.l2(x)
+        x = self.b2(x)
+        x = func.relu(x)
+        x = self.l3(x)
+        x = self.b3(x)
+        return x
+
+
+def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer, device):
+    """Takes the training database with DataLoader and trains the NN1:
+    Edits model and loss function
+
+    :param Dataloader dataloader: 
+    :param NN1 model: NN1 network model 
+    :param nn.L1Loss loss_fn: loss function
+    :param optimizer: Type of optimizer (here Adam)
+    :param device: cuda or CPU
+
+    :return:
+    :rtype: np.ndarray
+    """
+    size = len(dataloader.dataset)
+    model.train()
+    for batch, (x, y) in enumerate(dataloader):
+        x, y = x.to(device), y.to(device)
+        y_pred = model(x)
+        loss = loss_fn(y_pred.squeeze(), y)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    return
+
+
+def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
+    """Takes the test database with DataLoader and tests the NN1:
+    Uses model and loss function to predict
+
+    :param Dataloader dataloader: 
+    :param NN1 model: NN1 network model
+    :param nn.L1Loss loss_fn: loss function
+    :param optimizer: Type of optimizer (here Adam)
+    :param device: cuda or CPU
+
+    :return: average of all losses
+    :rtype: float
+    :return: average of correct guesses
+    :rtype: float
+    """
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    model.eval()
+    test_loss, correct = 0, 0
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            pred = model(X)
+            pred = pred.squeeze()
+            test_loss += loss_fn(pred, y).item()
+            # print(f"=======================\n{pred} \n {y}\n")
+            # print(torch.round( pred.squeeze()))
+            correct += (torch.round(pred) ==
+                        y).type(torch.float).sum().item()
+
+    test_loss /= num_batches
+    correct /= size
+    # print(f"Test Error: Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f} \n", sep=' ', end='', flush=True)
+    return test_loss, correct
+
+
+def train_model(parameters: nn1_dataclass):
     # Chargement des données
     dataset = NN1PolygonDataset(
         parameters.label_path, parameters.polygons_path)
@@ -434,13 +467,13 @@ if __name__ == "__main__":
     torch.set_num_threads(4)
     print(f"Torch uses {torch.get_num_threads()} threads")
 
-    train_model(nn1_parameters(Nc=8,
-                               lr=1e-4,
-                               w=1e-1,
-                               batch_size=512,
-                               num_epochs=3000,
-                               shuffle=True,
-                               clean_start=False,
-                               num_workers=8,
-                               device="cpu"
-                               ))
+    train_model(nn1_dataclass(Nc=8,
+                              lr=1e-4,
+                              w=1e-1,
+                              batch_size=512,
+                              num_epochs=3000,
+                              shuffle=True,
+                              clean_start=False,
+                              num_workers=8,
+                              device="cpu"
+                              ))

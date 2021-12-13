@@ -13,14 +13,18 @@ import os
 from tqdm import tqdm
 import procrustes as pr
 
+from typing import Union
+
 
 ###########################   NN1   ###########################
 
-def mesh_contour(coord: np.ndarray, mesh_file) -> int:
+def mesh_contour(coord: np.ndarray, mesh_file, nn_choice: int) -> Union[int, np.ndarray]:
     """Simple .mesh generation with Gmsh API from a given contour
+    Returns the number of inner vertices (NN1) or their coordinates (NN2)
 
     :param np.ndarray coord: The coordinates of the contour
     :param string mesh_file: The name of the output .mesh file
+    :param int nn_choice: The choice of neural network (1 returns the number of inner vertices, 2 returns the coordinates of the inner vertices)
 
     :return: Number of inner vertices
     :rtype: int
@@ -60,9 +64,16 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
 
     # Number of vertices
     nb_v = len(gmsh.model.mesh.getNodes()[0])
-
     # Number of inner_vertices
     nb_inner_v = nb_v - nb_v_in_c
+
+    # Coordinates of inner_vertices
+    coord_inner_v = gmsh.model.mesh.getNodes()[1][len(
+        coord)*3:]
+    # Delete the third coordinates
+    coord_inner_v = np.delete(
+        coord_inner_v, np.arange(-1, coord_inner_v.size, 3))
+    print(coord_inner_v)
 
     gmsh.write(str(mesh_file))
 
@@ -73,7 +84,14 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     gmsh.model.remove()
     # gmsh.finalize()
 
-    return nb_inner_v
+    if nn_choice == 1:
+        return nb_inner_v
+    if nn_choice == 2:
+        return coord_inner_v
+    if nn_choice == 3:
+        raise ValueError("Third neural network not yet implemented")
+    else:
+        raise ValueError("nn_choice must be 1,2, or 3")
 
 
 def create_random_contour(nvert: int) -> np.ndarray:
@@ -174,7 +192,7 @@ def gen_database(Nc: int,  # Number of contour edges
                 pr.procrustes(coord)
                 # Mesh polygon and get nb of inner vertices
                 nb_inner_vert = mesh_contour(
-                    coord, data_path / meshes_folder / polygon_filename.with_suffix(".mesh"))
+                    coord, data_path / meshes_folder / polygon_filename.with_suffix(".mesh"), 1)
 
                 # Write label files
                 label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
@@ -200,6 +218,10 @@ def create_grid(coord, ls: float) -> np.ndarray:
 
     :return: Coordinates of the grid
     :rtype: np.ndarray
+
+
+
+
     """
     # Grid scale factor
     Gscale_factor = 0.01
@@ -228,14 +250,14 @@ def main():
     # Test one mesh
     # coord = create_random_contour(10)
     # pr.procrustes(coord)
-    # mesh_contour(coord, "out.msh")
+    # mesh_contour(coord, "out.msh",1)
     # gmsh.finalize()
 
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    # request = dict({(1.0, 1)})
-    # gen_database(4, request)
+    request = dict({(1.0, 1)})
+    gen_database(6, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})
@@ -249,8 +271,8 @@ def main():
     # request = dict({(1.0, 380000)})
     # gen_database(16, request)
 
-    contour = create_random_contour(4)
-    create_grid(contour, 1.0)
+    # contour = create_random_contour(4)
+    # create_grid(contour, 1.0)
     return
 
 

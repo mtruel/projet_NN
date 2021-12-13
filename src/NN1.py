@@ -218,6 +218,7 @@ class nn1_parameters:
     # Comment about execution
     execution_notes: str = ""
 
+    output_path: Path = None
     history_folder: Path = Path("history/nn1")
 
     log_file: Path = Path("last_executions.log")
@@ -226,18 +227,23 @@ class nn1_parameters:
         self.lauch_date: str = time.asctime()
 
         # Paths
+        # Inputs
         if self.data_path is None:
             self.data_path = Path(f"data/{self.Nc}")
-            self.polygons_path = self.data_path / Path(f"polygons")
-            self.label_path = self.data_path / Path(f"labels")
-            self.model_path = self.data_path / Path(f"model_{self.Nc}.pth")
-            self.model_w_path = self.data_path / \
-                Path(f"model_weights_{self.Nc}.pth")
+        self.polygons_path = self.data_path / Path(f"polygons")
+        self.label_path = self.data_path / Path(f"labels")
 
+        if self.output_path is None:
+            self.output_path = self.data_path
+        if self.model_path is None:
+            self.model_path = self.output_path / Path(f"model_{self.Nc}.pth")
+        if self.model_w_path is None:
+            self.model_w_path = self.output_path / \
+                Path(f"model_weights_{self.Nc}.pth")
         if self.trace_path is None:
-            self.trace_path = self.data_path / Path("trace.txt")
+            self.trace_path = self.output_path / Path("trace.txt")
         if self.plot_path is None:
-            self.plot_path = self.data_path / Path(f"plot_{self.Nc}.png")
+            self.plot_path = self.output_path / Path(f"plot_{self.Nc}.png")
 
         if self.clean_start:
             shutil.rmtree(self.model_path, ignore_errors=True)
@@ -348,7 +354,7 @@ def train_model(parameters: nn1_parameters):
         test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle, num_workers=parameters.num_workers)
 
     # Model
-    model = NN1(2 * parameters.Nc + 1)
+    model = NN1(2 * parameters.Nc + 1).to(parameters.device)
     # Load a pretrainned model
     if not(parameters.clean_start):
         try:
@@ -428,7 +434,7 @@ if __name__ == "__main__":
     torch.set_num_threads(4)
     print(f"Torch uses {torch.get_num_threads()} threads")
 
-    train_model(nn1_parameters(Nc=6,
+    train_model(nn1_parameters(Nc=8,
                                lr=1e-4,
                                w=1e-1,
                                batch_size=512,

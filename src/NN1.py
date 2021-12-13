@@ -126,6 +126,7 @@ class nn1_dataclass:
     log_file: Path = Path("last_executions.log")
 
     def __post_init__(self):
+        # Check if type is respected 
         self.lauch_date: str = time.asctime()
 
         # Paths
@@ -193,7 +194,7 @@ class nn1_dataclass:
             pass
         
         try:
-            os.makedirs(self.output_folder)
+            os.makedirs(self.output_path)
         except FileExistsError:
             pass
 

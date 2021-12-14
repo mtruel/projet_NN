@@ -206,7 +206,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     :rtype: np.ndarray
     """
     # Grid scale factor
-    Gscale_factor = 0.05
+    Gscale_factor = 0.01
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(1/Gscale)
     grid = np.zeros(((nnodes+1)**2, (nnodes+1)**2))
@@ -223,6 +223,35 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
         y += Gscale
     return grid
 
+def score_of_node(node: np.ndarray, nodes: np.ndarray) -> float:
+    '''Gives the score of a grid node
+
+    :param np.ndarray node: the grid node considered
+    :param np.ndarray nodes: the coordinates of the inner vertices
+
+    :return: score of the node
+    :rtype: float
+    '''
+    nb_nodes = nodes.size
+    dist = np.zeros(nb_nodes)
+    for i in range(nb_nodes):
+        dist[i] = sqrt((node[0]-nodes[i,0])**2 + (node[1]-nodes[i,1])**2)
+    return np.argmin(dist)
+
+def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.ndarray:
+    """Computes the scores of each grid node
+
+    :param np.ndarray grid: the grid node over the polygon
+    :param np.ndarray coord_inner_v: the coordinates of the inner vertices
+
+    :return: scores of all grid nodes in a vector
+    :rtype: np.ndarray
+    """
+    nb_nodes = (grid.size)/2
+    Scores = np.zeros(nb_nodes)
+    for i in range(nb_nodes):
+        Scores[i] = score_of_node(np.array([grid[i,0],grid[i,1]]),coord_inner_v)
+    return Scores
 
 def main():
     # gmsh.initialize()

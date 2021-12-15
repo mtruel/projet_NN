@@ -15,6 +15,8 @@ import procrustes as pr
 
 from typing import Union
 
+import matplotlib.pyplot as plt
+
 
 ###########################   NN1   ###########################
 
@@ -197,15 +199,16 @@ def gen_database(Nc: int,  # Number of contour edges
 ###########################   NN2   ###########################
 
 def is_in_contour(x: float, y: float, coord: np.ndarray) -> bool:
-    # Determine if the point is in the polygon.
-    #
-    # Args:
-    #   x -- The x coordinates of point.
-    #   y -- The y coordinates of point.
-    #   coord -- a list of tuples [(x, y), (x, y), ...]
-    #
-    # Returns:
-    #   True if the point is in the path or is a corner or on the boundary
+    """Determine if the point is in the polygon
+
+    :param float x: The x coordinates of point
+    :param float y: The y coordinates of point
+
+    :return: True if the point is inside the polynom, False otherwise
+    :rtype: bool
+
+    source : wikipedia
+    """
 
     num = len(coord)
     j = num - 1
@@ -245,16 +248,13 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     for i in range(nnodes):
         for j in range(nnodes):
             if is_in_contour(x, y, coord):
-                grid = np.append(grid, [x, y])  # NOT WORKING !!!!!
-                print(grid.shape)
+                grid = np.append(grid, [[x, y]], axis=0)  # NOT WORKING !!!!!
 
             x += Gscale
             # print(i,j)
             # print(grid[i+j,0],grid[i+j,1])
         x = -Gscale*nnodes/2
         y += Gscale
-
-    print("grid =", grid)
     return grid
 
 
@@ -292,6 +292,64 @@ def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.nda
     return Scores
 
 
+def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.array:
+    coord_min_label = np.argmin(scores)
+    print("min label = ", coord_min_label)
+
+    # search for the 8 points around the minimum
+    # /!\ Ne fonctionne pas si le minimum se trouve au bord,
+    # /!\ ce qui est impossible si la taille de la grille est bien choisie
+    # /!\ Si besoin de changer, définir un label de bord
+
+    coord_min = grid[coord_min_label]
+    print("coord_min_grid =", coord_min)
+    Gscale = abs(coord_min[0]-grid[coord_min_label+1][0])
+
+    local_domain_label = []
+    local_domain_scores = []
+
+    for i in range(len(grid)):
+        if grid[i][0] == coord_min[0]:
+            if abs(grid[i][1]-coord_min[1]) <= 1.1*Gscale:
+                local_domain_label.append(i-1)
+                local_domain_label.append(i)
+                local_domain_label.append(i+1)
+
+    # remove the center element to form the final local polygon
+    del local_domain_label[4]
+
+    local_domain_scores = [scores[i] for i in local_domain_label]
+
+    # 0 1 2
+    # 3   4
+    # 5 6 7
+
+    # print("local domain label = ", local_domain_label)
+    # print("local domain scores = ", local_domain_scores)
+
+    # barycentric coordinates of the final point
+    xs = [0, 1, 2, 5, 6, 7]
+    ys = [0, 3, 5, 2, 4, 7]
+
+    xsum = 0
+    ysum = 0
+    xsum_score = 0
+    ysum_score = 0
+
+    for i in xs:
+        xsum += local_domain_scores[i]*grid[local_domain_label[i]][0]
+        xsum_score += local_domain_scores[i]
+    for i in ys:
+        ysum += local_domain_scores[i]*grid[local_domain_label[i]][1]
+        ysum_score += local_domain_scores[i]
+
+    xbar = xsum/xsum_score
+    ybar = ysum/ysum_score
+
+    print("x, y = ", xbar, ybar)
+    return
+
+
 def main():
     # gmsh.initialize()
     # Test one mesh
@@ -322,8 +380,17 @@ def main():
     grid = create_grid(contour, 1.0)
 
     coord_inner_v = mesh_contour(contour, "out.mesh")
-    print("coord_inner_v", coord_inner_v)
     scores = calculate_score_array(grid, coord_inner_v)
+
+    # Show inner grid :
+    if 0:
+        plt.scatter(np.transpose(grid)[0], np.transpose(
+            grid)[1], c=scores)
+        plt.colorbar()
+        plt.title("Score of each point of the grid")
+        plt.show()
+
+    place_inner_vertex(scores, grid, 1.0)
 
     return
 

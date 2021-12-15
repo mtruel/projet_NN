@@ -293,8 +293,16 @@ def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.nda
 
 
 def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.array:
+    """Interpolates the position of the point given the scores on the grid
+
+    :param np.ndarray scores: the scores of each point of the grid
+    :param np.ndarray grid: the grid node over the polygon
+
+    :return: coordinates of the point
+    :rtype: list
+    """
+
     coord_min_label = np.argmin(scores)
-    print("min label = ", coord_min_label)
 
     # search for the 8 points around the minimum
     # /!\ Ne fonctionne pas si le minimum se trouve au bord,
@@ -302,7 +310,7 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
     # /!\ Si besoin de changer, définir un label de bord
 
     coord_min = grid[coord_min_label]
-    print("coord_min_grid =", coord_min)
+
     Gscale = abs(coord_min[0]-grid[coord_min_label+1][0])
 
     local_domain_label = []
@@ -343,11 +351,38 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
         ysum += local_domain_scores[i]*grid[local_domain_label[i]][1]
         ysum_score += local_domain_scores[i]
 
-    xbar = xsum/xsum_score
-    ybar = ysum/ysum_score
+    xbar = xsum/xsum_score  # optimal x position
+    ybar = ysum/ysum_score  # optimal y position
 
-    print("x, y = ", xbar, ybar)
-    return
+    return [xbar, ybar]
+
+
+def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array):
+    x = vert[0]
+    y = vert[1]
+    radius = 0.1*ls  # ARBITRARY : MODIFY IF ERROR
+    to_remove = []
+    for i in range(len(grid)):
+        # if the point is too close to the given coordinates
+        if((grid[i][0]-x)**2 + (grid[i][1]-y)**2 < radius**2):
+            to_remove.append(i)
+    grid = np.delete(grid, to_remove, axis=0)
+    scores = np.delete(scores, to_remove)
+    return grid, scores
+
+
+def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: np.ndarray, nb_inner_v: int):
+    out_vertices = np.zeros((nb_inner_v, 2))  # coordinates of the vertices
+
+    for i in range(nb_inner_v):  # A CORRIGER !!
+        grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
+        print("lens = ", len(grid), len(scores))
+        out_vertices[i] = place_inner_vertex(scores, grid, ls)
+        # remove grid points within a given radius of out_vertices[i]:
+
+    print("out vertices : \n", out_vertices)
+
+    return out_vertices
 
 
 def main():
@@ -380,17 +415,20 @@ def main():
     grid = create_grid(contour, 1.0)
 
     coord_inner_v = mesh_contour(contour, "out.mesh")
+    nb_inner_v = len(coord_inner_v)
     scores = calculate_score_array(grid, coord_inner_v)
 
-    # Show inner grid :
-    if 0:
-        plt.scatter(np.transpose(grid)[0], np.transpose(
-            grid)[1], c=scores)
-        plt.colorbar()
-        plt.title("Score of each point of the grid")
-        plt.show()
+    out_vertices = compute_vertices(1.0, contour, grid, scores, nb_inner_v)
 
-    place_inner_vertex(scores, grid, 1.0)
+    # Show inner grid :
+    if 1:
+        plt.scatter(np.transpose(grid)[0], np.transpose(
+            grid)[1], c=scores)  # score map of the grid
+        plt.colorbar()
+        plt.scatter(np.transpose(out_vertices)[
+                    0], np.transpose(out_vertices)[1], color="red")  # points put after interpolation
+        plt.title("Score of each point of the grid and position interpolated")
+        plt.show()
 
     return
 

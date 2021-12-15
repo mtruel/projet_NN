@@ -28,7 +28,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> np.ndarray:
     :return: Coordinates of inner vertices
     :rtype: np.ndarray
     """
-    # gmsh.initialize()
+    gmsh.initialize()
 
     # Print only gmsh warnings and errors
     gmsh.option.setNumber("General.Verbosity", 2)
@@ -64,10 +64,10 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> np.ndarray:
     # Coordinates of inner_vertices
     coord_inner_v = gmsh.model.mesh.getNodes()[1][len(
         coord)*3:]
-    # Delete the third coordinates
-    coord_inner_v = np.delete(
-        coord_inner_v, np.arange(-1, coord_inner_v.size, 3))
-    print(coord_inner_v)
+   # Delete the third coordinates
+    if len(coord_inner_v) > 0:
+        coord_inner_v = np.delete(
+            coord_inner_v, np.arange(-1, coord_inner_v.size, 3))
 
     gmsh.write(str(mesh_file))
 
@@ -171,7 +171,7 @@ def gen_database(Nc: int,  # Number of contour edges
         idx = 0
         for ls in sorted(requested_polygons.keys()):
             for _ in tqdm(range(requested_polygons[ls])):
-                polygon_filename = Path(f"poly{ls}_{idx}.dat")
+                polygon_filename = Path(f"coord{ls}_{idx}.dat")
 
                 # Creation of polygon
                 coord = create_random_contour(Nc)
@@ -196,6 +196,36 @@ def gen_database(Nc: int,  # Number of contour edges
 
 ###########################   NN2   ###########################
 
+def is_in_contour(x: float, y: float, coord: np.ndarray) -> bool:
+    # Determine if the point is in the polygon.
+    #
+    # Args:
+    #   x -- The x coordinates of point.
+    #   y -- The y coordinates of point.
+    #   coord -- a list of tuples [(x, y), (x, y), ...]
+    #
+    # Returns:
+    #   True if the point is in the path or is a corner or on the boundary
+
+    num = len(coord)
+    j = num - 1
+    c = False
+    for i in range(num):
+        if (x == coord[i][0]) and (y == coord[i][1]):
+            # point is a corner
+            return True
+        if ((coord[i][1] > y) != (coord[j][1] > y)):
+            slope = (x-coord[i][0])*(coord[j][1]-coord[i][1]) - \
+                (coord[j][0]-coord[i][0])*(y-coord[i][1])
+            if slope == 0:
+                # point is on boundary
+                return True
+            if (slope < 0) != (coord[j][1] < coord[i][1]):
+                c = not c
+        j = i
+    return c
+
+
 def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     """
     Creates uniform grided square arond the contour
@@ -208,20 +238,25 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     # Grid scale factor
     Gscale_factor = 0.01
     Gscale = Gscale_factor * ls  # size of mesh grid
-    nnodes = int(1/Gscale)
-    grid = np.zeros(((nnodes+1)**2, (nnodes+1)**2))
+    nnodes = int(2/Gscale)  # number of nodes on the grid side
+    grid = np.empty((0, 2))
     x = -Gscale*nnodes/2  # On commence en bas a gauche du grid
     y = -Gscale*nnodes/2
-    for i in range(nnodes+1):
-        for j in range(nnodes+1):
-            grid[i+j, 0] = x
-            grid[i+j, 1] = y
+    for i in range(nnodes):
+        for j in range(nnodes):
+            if is_in_contour(x, y, coord):
+                grid = np.append(grid, [x, y])  # NOT WORKING !!!!!
+                print(grid.shape)
+
             x += Gscale
             # print(i,j)
             # print(grid[i+j,0],grid[i+j,1])
         x = -Gscale*nnodes/2
         y += Gscale
+
+    print("grid =", grid)
     return grid
+
 
 def score_of_node(node: np.ndarray, nodes: np.ndarray) -> float:
     '''Gives the score of a grid node
@@ -232,11 +267,13 @@ def score_of_node(node: np.ndarray, nodes: np.ndarray) -> float:
     :return: score of the node
     :rtype: float
     '''
-    nb_nodes = nodes.size
+    nb_nodes = nodes.size//2  # number of inner vertices
     dist = np.zeros(nb_nodes)
-    for i in range(nb_nodes):
-        dist[i] = sqrt((node[0]-nodes[i,0])**2 + (node[1]-nodes[i,1])**2)
-    return np.argmin(dist)
+    for i in range(0, nb_nodes):
+        dist[i] = math.sqrt((node[0]-nodes[2*i])**2 +
+                            (node[1]-nodes[2*i+1])**2)
+    return min(dist)
+
 
 def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.ndarray:
     """Computes the scores of each grid node
@@ -247,18 +284,20 @@ def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.nda
     :return: scores of all grid nodes in a vector
     :rtype: np.ndarray
     """
-    nb_nodes = (grid.size)/2
+    nb_nodes = (grid.size)//2
     Scores = np.zeros(nb_nodes)
     for i in range(nb_nodes):
-        Scores[i] = score_of_node(np.array([grid[i,0],grid[i,1]]),coord_inner_v)
+        Scores[i] = score_of_node(
+            np.array([grid[i, 0], grid[i, 1]]), coord_inner_v)
     return Scores
+
 
 def main():
     # gmsh.initialize()
     # Test one mesh
     # coord = create_random_contour(10)
     # pr.procrustes(coord)
-    # mesh_contour(coord, "out.msh",1)
+    # mesh_contour(coord, "out.msh")
     # gmsh.finalize()
 
     # Gen database
@@ -279,8 +318,13 @@ def main():
     # request = dict({(1.0, 380000)})
     # gen_database(16, request)
 
-    contour = create_random_contour(4)
-    create_grid(contour, 1.0)
+    contour = create_random_contour(8)
+    grid = create_grid(contour, 1.0)
+
+    coord_inner_v = mesh_contour(contour, "out.mesh")
+    print("coord_inner_v", coord_inner_v)
+    scores = calculate_score_array(grid, coord_inner_v)
+
     return
 
 

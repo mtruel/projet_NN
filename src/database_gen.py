@@ -239,7 +239,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     :rtype: np.ndarray
     """
     # Grid scale factor
-    Gscale_factor = 0.05 # 0.05 is enough -> 40*40 grid for ls = 1
+    Gscale_factor = 0.01  # 0.05 is enough -> 40*40 grid for ls = 1
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(2/Gscale)  # number of nodes on the grid side
     grid = np.empty((0, 2))
@@ -376,9 +376,9 @@ def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: n
     out_vertices = np.zeros((nb_inner_v, 2))  # coordinates of the vertices
 
     for i in range(nb_inner_v):  # A CORRIGER !!
-        grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
-        print("lens = ", len(grid), len(scores))
+        # print("lens = ", len(grid), len(scores))
         out_vertices[i] = place_inner_vertex(scores, grid, ls)
+        grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
         # remove grid points within a given radius of out_vertices[i]:
 
     print("out vertices : \n", out_vertices)
@@ -416,7 +416,7 @@ def main():
     grid = create_grid(contour, 1.0)
 
     coord_inner_v = mesh_contour(contour, "out.mesh")
-    nb_inner_v = len(coord_inner_v)
+    nb_inner_v = len(coord_inner_v)//2
     scores = calculate_score_array(grid, coord_inner_v)
 
     out_vertices = compute_vertices(1.0, contour, grid, scores, nb_inner_v)

@@ -3,11 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.cuda
 import torch
-import math
 
-import time
+from datetime import datetime
 from dataclasses import dataclass
-import sys
 import shutil
 from tqdm import tqdm
 from pathlib import Path
@@ -81,7 +79,7 @@ class nn1_dataclass:
     :param output_path Path:
     :param history_folder Path:
     """
-    
+
     # Parameters
     # Number of inner vertices
     Nc: int
@@ -126,8 +124,9 @@ class nn1_dataclass:
     log_file: Path = Path("last_executions.log")
 
     def __post_init__(self):
-        # Check if type is respected 
-        self.lauch_date: str = time.asctime()
+        # Check if type is respected
+        now = datetime.now()
+        self.lauch_date: str = now.strftime("%Y%m%d_%H:%M:%S")
 
         # Paths
         # Inputs
@@ -192,7 +191,7 @@ class nn1_dataclass:
             os.makedirs(self.history_folder)
         except FileExistsError:
             pass
-        
+
         try:
             os.makedirs(self.output_path)
         except FileExistsError:
@@ -245,7 +244,7 @@ class nn1_dataclass:
 class NN1PolygonDataset(Dataset):
     """
     Dataset for NN1
-    
+
     __init__ loads the label file
     __getitem__ return an element of the database
     """
@@ -283,6 +282,7 @@ class NN1(nn.Module):
     Takes ls and coordinates of contour to mesh 
     Returns an estimate of the number of inner point Nc 
     """
+
     def __init__(self, n_features: int):
         super(NN1, self).__init__()
         self.l1 = nn.Linear(n_features, 4 * n_features)
@@ -368,6 +368,13 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     return test_loss, correct
 
 
+def adjust_learning_rate(optimizer, epoch):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = args.lr * (0.1 ** (epoch // 30))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
 def train_model(parameters: nn1_dataclass):
     # Chargement des données
     dataset = NN1PolygonDataset(
@@ -421,6 +428,11 @@ def train_model(parameters: nn1_dataclass):
         # Progress bar
         pbar.set_description(
             f"Epoch {parameters.current_epoch} | Accuracy: {(100*accuracy):>0.4f}%, Avg loss: {avg_loss:>8f}")
+        
+        # Adaptative LR
+        # for g in opt.param_groups:
+        #     g['lr'] = avg_loss * 0.001
+            # print(f"Learning rate : {(parameters.num_epochs - epoch)* parameters.lr}")
 
         # save plot , trace and model
         if epoch % 10 == 1:
@@ -468,13 +480,13 @@ if __name__ == "__main__":
     torch.set_num_threads(4)
     print(f"Torch uses {torch.get_num_threads()} threads")
 
-    train_model(nn1_dataclass(Nc=8,
+    train_model(nn1_dataclass(Nc=10,
                               lr=1e-4,
                               w=1e-1,
                               batch_size=512,
                               num_epochs=3000,
                               shuffle=True,
-                              clean_start=False,
+                              clean_start=True,
                               num_workers=8,
                               device="cpu"
                               ))

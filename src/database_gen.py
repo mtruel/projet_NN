@@ -239,7 +239,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     :rtype: np.ndarray
     """
     # Grid scale factor
-    Gscale_factor = 0.01
+    Gscale_factor = 0.05 # 0.05 is enough -> 40*40 grid for ls = 1
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(2/Gscale)  # number of nodes on the grid side
     grid = np.empty((0, 2))
@@ -335,6 +335,7 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
     # print("local domain label = ", local_domain_label)
     # print("local domain scores = ", local_domain_scores)
 
+    ###### INTERPOLATION ######
     # barycentric coordinates of the final point
     xs = [0, 1, 2, 5, 6, 7]
     ys = [0, 3, 5, 2, 4, 7]

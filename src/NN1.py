@@ -368,14 +368,8 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     return test_loss, correct
 
 
-def adjust_learning_rate(optimizer, epoch):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = args.lr * (0.1 ** (epoch // 30))
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-
-
 def train_model(parameters: nn1_dataclass):
+    print(f"Training for {parameters.Nc} vertices.")
     # Chargement des données
     dataset = NN1PolygonDataset(
         parameters.label_path, parameters.polygons_path)
@@ -428,11 +422,11 @@ def train_model(parameters: nn1_dataclass):
         # Progress bar
         pbar.set_description(
             f"Epoch {parameters.current_epoch} | Accuracy: {(100*accuracy):>0.4f}%, Avg loss: {avg_loss:>8f}")
-        
+
         # Adaptative LR
         # for g in opt.param_groups:
-        #     g['lr'] = avg_loss * 0.001
-            # print(f"Learning rate : {(parameters.num_epochs - epoch)* parameters.lr}")
+        #     g['lr'] = max(1e-3 + epoch * (parameters.lr - 1) / 100,parameters.lr)
+        #     print(f"Learning rate : {g['lr']}")
 
         # save plot , trace and model
         if epoch % 10 == 1:
@@ -480,7 +474,7 @@ if __name__ == "__main__":
     torch.set_num_threads(4)
     print(f"Torch uses {torch.get_num_threads()} threads")
 
-    train_model(nn1_dataclass(Nc=10,
+    train_model(nn1_dataclass(Nc=4,
                               lr=1e-4,
                               w=1e-1,
                               batch_size=512,
@@ -488,5 +482,5 @@ if __name__ == "__main__":
                               shuffle=True,
                               clean_start=True,
                               num_workers=8,
-                              device="cpu"
+                              device="cpu",
                               ))

@@ -358,7 +358,17 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
     return [xbar, ybar]
 
 
-def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array):
+def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array) -> np.ndarray:
+    """Updates the grid and the scores by removing some non necessary points
+
+    :param float ls: size of an edge inside the polygon
+    :param list vert: coords of an inner vertex
+    :param np.ndarray grid: the grid node over the polygon
+    :param np.ndarray scores: the scores of each point of the grid
+
+    :return: new grid and new scores
+    :rtype: np.ndarray
+    """
     x = vert[0]
     y = vert[1]
     radius = 0.1*ls  # ARBITRARY : MODIFY IF ERROR
@@ -372,7 +382,17 @@ def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array
     return grid, scores
 
 
-def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: np.ndarray, nb_inner_v: int):
+def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: np.ndarray, nb_inner_v: int) -> np.ndarray:
+    """Computes the coords of all the inner vertices
+
+    :param float ls: size of an edge inside the polygon
+    :param np.ndarray contour: coords of the contour
+    :param np.ndarray grid: the grid node over the polygon
+    :param np.ndarray scores: the scores of each point of the grid
+
+    :return: out_vertices, the coords of all the inner vertices
+    :rtype: np.ndarray
+    """
     out_vertices = np.zeros((nb_inner_v, 2))  # coordinates of the vertices
 
     for i in range(nb_inner_v):  # A CORRIGER !!

@@ -30,7 +30,6 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> np.ndarray:
     :return: Coordinates of inner vertices
     :rtype: np.ndarray
     """
-    gmsh.initialize()
 
     # Print only gmsh warnings and errors
     gmsh.option.setNumber("General.Verbosity", 2)
@@ -74,7 +73,7 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> np.ndarray:
     gmsh.write(str(mesh_file))
 
     # # Open mesh in GUI
-    if '-nopopup' not in sys.argv:
+    if '-mesh' in sys.argv:
         gmsh.fltk.run()
 
     gmsh.model.remove()
@@ -115,7 +114,7 @@ def gen_database(Nc: int,  # Number of contour edges
                  requested_polygons: dict,
                  # Delete any previous files to start clean
                  # Data main folder
-                 data_path: Path = Path("data"),
+                 data_path: Path = Path("NN1"),
                  # Subfolders
                  meshes_folder: Path = Path("meshes"),
                  polygons_folder: Path = Path("polygons"),
@@ -145,7 +144,10 @@ def gen_database(Nc: int,  # Number of contour edges
     :return: Creates the output files in the desired folder
     :rtype:
     """
+
     print(f"Generating database for {Nc} vertices.")
+
+    gmsh.initialize()
 
     # Add polygons folder
     data_path = data_path / Path(str(Nc))
@@ -162,8 +164,6 @@ def gen_database(Nc: int,  # Number of contour edges
     # data_path.mkdir(exist_ok=True)
     (data_path / polygons_folder).mkdir(exist_ok=True)
     (data_path / meshes_folder).mkdir(exist_ok=True)
-
-    gmsh.initialize()
 
     # Create label file
     with open(data_path / label_filename, "w+") as label_file:
@@ -401,39 +401,26 @@ def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: n
         grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
         # remove grid points within a given radius of out_vertices[i]:
 
-    print("out vertices : \n", out_vertices)
-
     return out_vertices
 
 
 def main():
-    # gmsh.initialize()
-    # Test one mesh
-    # coord = create_random_contour(10)
-    # pr.procrustes(coord)
-    # mesh_contour(coord, "out.msh")
-    # gmsh.finalize()
 
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    # request = dict({(1.0, 1)})
-    # gen_database(6, request)
+    request = dict({(1.0, 1000)})
+    gen_database(12, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})
     # gen_database(8, request)
     # request = dict({(1.0, 48000)})
-    # gen_database(10, request)
-    # request = dict({(1.0, 95000)})
-    # gen_database(12, request)
-    # request = dict({(1.0, 190000)})
-    # gen_database(14, request)
-    # request = dict({(1.0, 380000)})
-    # gen_database(16, request)
 
     contour = create_random_contour(8)
     grid = create_grid(contour, 1.0)
+
+    gmsh.initialize()
 
     coord_inner_v = mesh_contour(contour, "out.mesh")
     nb_inner_v = len(coord_inner_v)//2
@@ -442,7 +429,7 @@ def main():
     out_vertices = compute_vertices(1.0, contour, grid, scores, nb_inner_v)
 
     # Show inner grid :
-    if 1:
+    if '-grid' in sys.argv:
         plt.scatter(np.transpose(grid)[0], np.transpose(
             grid)[1], c=scores)  # score map of the grid
         plt.colorbar()

@@ -18,7 +18,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 """
-But : Prédire le nombre N1 de point dans un polygone donnée
+But : Prédire les coordonnées de N1 points dans un polygone donnée
 
 import database_gen
 
@@ -26,7 +26,7 @@ import database_gen
 
 Feedforward NN with multilayer perceptrons
 
-Goal: Predict the number N1 of points to put inside a given polygonal contour.
+Goal: Predict the coordinates of N1 points inside a given polygonal contour.
 The approximation given is called N1a.
 
 
@@ -55,9 +55,9 @@ du coup je dois :
 """
 
 
-class NN1PolygonDataset(Dataset):
+class NN2PolygonDataset(Dataset):
     """
-    Dataset for NN1
+    Dataset for NN2
     """
 
     # Constructor
@@ -88,7 +88,7 @@ class NN1PolygonDataset(Dataset):
 # poly{Nc}_{idx}.dat
 # label
 # idx,Nc
-class NN1(nn.Module):
+class NN2(nn.Module):
 
     def __init__(self, n_features: int):
         super(NN1, self).__init__()
@@ -111,7 +111,7 @@ class NN1(nn.Module):
         return x
 
 
-def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer, device):
+def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer, device):
     """Takes the training database with DataLoader and trains the NN1:
     Edits model and loss function
 

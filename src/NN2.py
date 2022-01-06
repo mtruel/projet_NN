@@ -90,14 +90,15 @@ class NN2PolygonDataset(Dataset):
 # idx,Nc
 class NN2(nn.Module):
 
-    def __init__(self, n_features: int):
-        super(NN1, self).__init__()
-        self.l1 = nn.Linear(n_features, 4 * n_features)
-        self.b1 = nn.BatchNorm1d(4 * n_features)
-        self.l2 = nn.Linear(4 * n_features, 4 * n_features)
-        self.b2 = nn.BatchNorm1d(4 * n_features)
-        self.l3 = nn.Linear(4 * n_features, 1)
-        self.b3 = nn.BatchNorm1d(1)
+    def __init__(self, n_features: int, Np : int):
+        Ngk = int(n_features/Np)
+        super(NN2, self).__init__()
+        self.l1 = nn.Linear(n_features, 2 * n_features + Ngk)
+        self.b1 = nn.BatchNorm1d(2 * n_features + Ngk)
+        self.l2 = nn.Linear(2 * n_features + Ngk, 2 * n_features + Ngk)
+        self.b2 = nn.BatchNorm1d(2 * n_features + Ngk)
+        self.l3 = nn.Linear(2 * n_features + Ngk, 1)
+        self.b3 = nn.BatchNorm1d(Ngk)
 
     def forward(self, x: torch.Tensor):
         x = self.l1(x.float())
@@ -112,11 +113,11 @@ class NN2(nn.Module):
 
 
 def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer, device):
-    """Takes the training database with DataLoader and trains the NN1:
+    """Takes the training database with DataLoader and trains the NN2:
     Edits model and loss function
 
     :param Dataloader dataloader:
-    :param NN1 model: NN1 network model
+    :param NN2 model: NN2 network model
     :param nn.L1Loss loss_fn: loss function
     :param optimizer: Type of optimizer (here Adam)
     :param device: cuda or CPU
@@ -138,12 +139,12 @@ def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer
     return
 
 
-def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
+def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
     """Takes the test database with DataLoader and tests the NN1:
     Uses model and loss function to predict
 
     :param Dataloader dataloader:
-    :param NN1 model: NN1 network model
+    :param NN2 model: NN2 network model
     :param nn.L1Loss loss_fn: loss function
     :param optimizer: Type of optimizer (here Adam)
     :param device: cuda or CPU
@@ -176,13 +177,15 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
 
 
 @dataclass
-class nn1_parameters:
+class nn2_parameters:
     """
     DataClass storing parameters for the learning
     """
     # Parameters
     # Number of inner vertices
     Nc: int
+    # Number of grid patches
+    Np: int
     # Hyperparameters
     # Learning rate
     lr: float
@@ -216,7 +219,7 @@ class nn1_parameters:
     # Comment about execution
     execution_notes: str = ""
 
-    history_folder: Path = Path("history/nn1")
+    history_folder: Path = Path("history/nn2")
 
     log_file: Path = Path("last_executions.log")
 
@@ -326,9 +329,9 @@ class nn1_parameters:
                         self.model_w_path.name)
 
 
-def train_model(parameters: nn1_parameters):
+def train_model(parameters: nn2_parameters):
     # Chargement des données
-    dataset = NN1PolygonDataset(
+    dataset = NN2PolygonDataset(
         parameters.label_path, parameters.polygons_path)
 
     len_train = int(len(dataset)*parameters.training_data_ratio)
@@ -346,7 +349,7 @@ def train_model(parameters: nn1_parameters):
         test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
 
     # Model
-    model = NN1(2 * parameters.Nc + 1)
+    model = NN2(2 * parameters.Nc + 1, parameters.Np)
     # Load a pretrainned model
     if not(parameters.clean_start):
         try:
@@ -423,11 +426,11 @@ def predict():
 
 
 if __name__ == "__main__":
-    train_model(nn1_parameters(Nc=6,
+    train_model(nn1_parameters(Nc=6, Np=4
                                lr=1e-4,
-                               w=1e-1,
+                               w=1e-2,
                                batch_size=512,
-                               num_epochs=3000,
+                               num_epochs=5000,
                                shuffle=True,
                                clean_start=False,
                                ))

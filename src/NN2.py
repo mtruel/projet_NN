@@ -115,8 +115,8 @@ def train_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, optimizer
     """Takes the training database with DataLoader and trains the NN1:
     Edits model and loss function
 
-    :param Dataloader dataloader: 
-    :param NN1 model: NN1 network model 
+    :param Dataloader dataloader:
+    :param NN1 model: NN1 network model
     :param nn.L1Loss loss_fn: loss function
     :param optimizer: Type of optimizer (here Adam)
     :param device: cuda or CPU
@@ -142,7 +142,7 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     """Takes the test database with DataLoader and tests the NN1:
     Uses model and loss function to predict
 
-    :param Dataloader dataloader: 
+    :param Dataloader dataloader:
     :param NN1 model: NN1 network model
     :param nn.L1Loss loss_fn: loss function
     :param optimizer: Type of optimizer (here Adam)
@@ -431,4 +431,3 @@ if __name__ == "__main__":
                                shuffle=True,
                                clean_start=False,
                                ))
-

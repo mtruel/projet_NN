@@ -184,7 +184,11 @@ def gen_database(Nc: int,  # Number of contour edges
     # Create label file
     with open(data_path / check_NN() / label_filename, "w+") as label_file:
         # Header
-        label_file.write("filename, N1\n")
+        if check_NN() == "NN1":
+            label_file.write("contour_file, N1\n")
+        if check_NN() == "NN2":
+            label_file.write("contour_file, grid_file, scores\n")
+
         # Generate polygons, tqdm create a progress bar
         idx = 0
         for ls in sorted(requested_polygons.keys()):
@@ -195,12 +199,27 @@ def gen_database(Nc: int,  # Number of contour edges
                 coord = create_random_contour(Nc)
                 # Normalisation
                 pr.procrustes(coord)
-                # Mesh polygon and get nb of inner vertices
-                nb_inner_vert = len(mesh_contour(
-                    coord, data_path_nb / meshes_folder / polygon_filename.with_suffix(".mesh")))/2
-                # Write label files
-                label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
+                # creation of grid
+                grid = create_grid(coord, ls)
+                # Mesh polygon and get coordinates of inner vertices + their number
+                coord_inner_v = mesh_contour(coord, "out.mesh")
+                nb_inner_vert = len(coord_inner_v)//2
+                # get scores
+                scores = calculate_score_array(grid, coord_inner_v)
 
+                # Create grid coordinate file
+                if check_NN() == "NN2":
+                    with open(data_path / "NN2" / "grid", "w+") as grid_file:
+                        for i in range(len(grid)):
+                            grid_file.write(f"{grid[i][0]} {grid[i][1]}\n")
+
+                # Write label files
+                # NN1
+                if check_NN() == "NN1":
+                    label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
+                # NN2
+                if check_NN() == "NN2":
+                    label_file.write(f"{polygon_filename},{scores}\n")
                 # Write polygon file
                 with open(data_path_nb / polygons_folder / polygon_filename, "w+") as polygon_file:
                     polygon_file.write(str(ls)+"\n")
@@ -209,6 +228,16 @@ def gen_database(Nc: int,  # Number of contour edges
                         polygon_file.write(str(i[1])+"\n")
                 idx += 1
     gmsh.finalize()
+    # Show inner grid with scores and interpolated coordinates:
+    if '-grid' in sys.argv:
+        plt.scatter(np.transpose(grid)[0], np.transpose(
+            grid)[1], c=scores)  # score map of the grid
+        plt.colorbar()
+        out_vertices = compute_vertices(ls, coord, grid, scores, nb_inner_vert)
+        plt.scatter(np.transpose(out_vertices)[
+                    0], np.transpose(out_vertices)[1], color="red")  # points put after interpolation
+        plt.title("Score of each point of the grid and position interpolated")
+        plt.show()
     return
 
 
@@ -264,7 +293,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     for i in range(nnodes):
         for j in range(nnodes):
             if is_in_contour(x, y, coord):
-                grid = np.append(grid, [[x, y]], axis=0)  # NOT WORKING !!!!!
+                grid = np.append(grid, [[x, y]], axis=0)
 
             x += Gscale
             # print(i,j)
@@ -425,7 +454,7 @@ def main():
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    request = dict({(1.0, 1000)})
+    request = dict({(1.0, 1)})
     gen_database(12, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
@@ -433,26 +462,7 @@ def main():
     # gen_database(8, request)
     # request = dict({(1.0, 48000)})
 
-    contour = create_random_contour(8)
-    grid = create_grid(contour, 1.0)
-
     gmsh.initialize()
-
-    coord_inner_v = mesh_contour(contour, "out.mesh")
-    nb_inner_v = len(coord_inner_v)//2
-    scores = calculate_score_array(grid, coord_inner_v)
-
-    out_vertices = compute_vertices(1.0, contour, grid, scores, nb_inner_v)
-
-    # Show inner grid :
-    if '-grid' in sys.argv:
-        plt.scatter(np.transpose(grid)[0], np.transpose(
-            grid)[1], c=scores)  # score map of the grid
-        plt.colorbar()
-        plt.scatter(np.transpose(out_vertices)[
-                    0], np.transpose(out_vertices)[1], color="red")  # points put after interpolation
-        plt.title("Score of each point of the grid and position interpolated")
-        plt.show()
 
     return
 

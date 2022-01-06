@@ -18,8 +18,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 """
-But : Prédire les coordonnées de N1 points dans un polygone donnée
-
+But : Predire les coordonnees de N1 points dans un polygone donne
 import database_gen
 
 
@@ -426,7 +425,7 @@ def predict():
 
 
 if __name__ == "__main__":
-    train_model(nn1_parameters(Nc=6, Np=4
+    train_model(nn2_parameters(Nc=6, Np=4,
                                lr=1e-4,
                                w=1e-2,
                                batch_size=512,

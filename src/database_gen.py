@@ -108,13 +108,29 @@ def create_random_contour(nvert: int) -> np.ndarray:
     return coord
 
 
+def check_NN() -> str:
+    """Checks the argv and returns it in string format
+
+    :return: "NN1","NN2", or appropriate errors
+    :rtype: string
+    """
+    if '-NN1' in sys.argv:
+        return "NN1"
+    if '-NN2' in sys.argv:
+        return "NN2"
+    if '-NN3' in sys.argv:
+        raise TypeError("NN3 not yet implemented.")
+    else:
+        raise TypeError("Please add -NN1 or -NN2 when compiling")
+
+
 def gen_database(Nc: int,  # Number of contour edges
                  # Dictionnary of requested polygons
                  # Request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
                  requested_polygons: dict,
                  # Delete any previous files to start clean
                  # Data main folder
-                 data_path: Path = Path("NN1"),
+                 data_path: Path = Path("data/"),
                  # Subfolders
                  meshes_folder: Path = Path("meshes"),
                  polygons_folder: Path = Path("polygons"),
@@ -150,23 +166,23 @@ def gen_database(Nc: int,  # Number of contour edges
     gmsh.initialize()
 
     # Add polygons folder
-    data_path = data_path / Path(str(Nc))
+    data_path_nb = data_path / Path(str(Nc))
 
     # Delete any previous files to start clean
     if clean_data_dirs:
-        shutil.rmtree(data_path, ignore_errors=True)
+        shutil.rmtree(data_path_nb, ignore_errors=True)
 
     # create tree
     try:
-        os.makedirs(data_path)
+        os.makedirs(data_path_nb)
     except FileExistsError:
         pass
     # data_path.mkdir(exist_ok=True)
-    (data_path / polygons_folder).mkdir(exist_ok=True)
-    (data_path / meshes_folder).mkdir(exist_ok=True)
+    (data_path_nb / polygons_folder).mkdir(exist_ok=True)
+    (data_path_nb / meshes_folder).mkdir(exist_ok=True)
 
     # Create label file
-    with open(data_path / label_filename, "w+") as label_file:
+    with open(data_path / check_NN() / label_filename, "w+") as label_file:
         # Header
         label_file.write("filename, N1\n")
         # Generate polygons, tqdm create a progress bar
@@ -181,12 +197,12 @@ def gen_database(Nc: int,  # Number of contour edges
                 pr.procrustes(coord)
                 # Mesh polygon and get nb of inner vertices
                 nb_inner_vert = len(mesh_contour(
-                    coord, data_path / meshes_folder / polygon_filename.with_suffix(".mesh")))/2
+                    coord, data_path_nb / meshes_folder / polygon_filename.with_suffix(".mesh")))/2
                 # Write label files
                 label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
 
                 # Write polygon file
-                with open(data_path / polygons_folder / polygon_filename, "w+") as polygon_file:
+                with open(data_path_nb / polygons_folder / polygon_filename, "w+") as polygon_file:
                     polygon_file.write(str(ls)+"\n")
                     for i in coord:
                         polygon_file.write(str(i[0])+"\n")

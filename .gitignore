@@ -1,11 +1,7 @@
-*.dat
-*.mesh
 data/*
-*.pth
-*.png
+history/*
 *.err
 *.out
-history/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

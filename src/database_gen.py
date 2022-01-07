@@ -16,7 +16,7 @@ import procrustes as pr
 
 ###########################   NN1   ###########################
 
-def mesh_contour(coord: np.ndarray, mesh_file) -> int:
+def mesh_contour(coord: np.ndarray, mesh_file: Path = None) -> int:
     """Simple .mesh generation with Gmsh API from a given contour
 
     :param np.ndarray coord: The coordinates of the contour
@@ -64,7 +64,8 @@ def mesh_contour(coord: np.ndarray, mesh_file) -> int:
     # Number of inner_vertices
     nb_inner_v = nb_v - nb_v_in_c
 
-    gmsh.write(str(mesh_file))
+    if mesh_file is not None:
+        gmsh.write(str(mesh_file))
 
     # # Open mesh in GUI
     # if '-nopopup' not in sys.argv:
@@ -190,7 +191,21 @@ def gen_database(Nc: int,  # Number of contour edges
     return
 
 
+def gen_mesh_one(Nc: int):
+    # Generation contour
+    coord = create_random_contour(Nc)
+    # Normalisation
+    pr.procrustes(coord)
+    # Mesh
+    gmsh.initialize()
+    Ni = mesh_contour(coord)  # Ni number of inner points
+    gmsh.finalize()
+
+    return coord, Ni
+
+
 ###########################   NN2   ###########################
+
 
 def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     """
@@ -223,6 +238,24 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
 
     return
 
+def gen_db_nn1():
+    # Gen database
+    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
+
+    request = dict({(1.0, 6000)})
+    gen_database(4, request)
+    request = dict({(1.0, 12000)})
+    gen_database(6, request)
+    request = dict({(1.0, 24000)})
+    gen_database(8, request)
+    request = dict({(1.0, 48000)})
+    gen_database(10, request)
+    request = dict({(1.0, 95000)})
+    gen_database(12, request)
+    request = dict({(1.0, 190000)})
+    gen_database(14, request)
+    request = dict({(1.0, 380000)})
+    gen_database(16, request)
 
 def main():
     # gmsh.initialize()
@@ -232,26 +265,13 @@ def main():
     # mesh_contour(coord, "out.msh")
     # gmsh.finalize()
 
-    # Gen database
-    # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    # request = dict({(1.0, 6000)})
-    # gen_database(4, request)
-    # request = dict({(1.0, 12000)})
-    # gen_database(6, request)
-    # request = dict({(1.0, 24000)})
-    # gen_database(8, request)
-    # request = dict({(1.0, 48000)})
-    # gen_database(10, request)
-    # request = dict({(1.0, 95000)})
-    # gen_database(12, request)
-    # request = dict({(1.0, 190000)})
-    # gen_database(14, request)
-    # request = dict({(1.0, 380000)})
-    # gen_database(16, request)
 
-    contour = create_random_contour(4)
-    create_grid(contour, 1.0)
+    # contour = create_random_contour(4)
+    # i=mesh_contour(contour)
+    # print(i)
+    # create_grid(contour, 1.0)
+    
     return
 
 

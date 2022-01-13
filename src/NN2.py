@@ -18,8 +18,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 """
+<<<<<<< HEAD
 But : Prédire les coordonnées de N1 points dans un polygone donné
 
+=======
+But : Predire les coordonnees de N1 points dans un polygone donne
+>>>>>>> 90dd57322eab0696248c69d44640c239e3365d4b
 import database_gen
 
 

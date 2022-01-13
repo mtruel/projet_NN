@@ -30,7 +30,7 @@ def mesh_contour(coord: np.ndarray, mesh_file: Path = None) -> int:
     :return: Coordinates of inner vertices
     :rtype: np.ndarray
     """
-    gmsh.initialize()
+    # gmsh.initialize()
 
     # Print only gmsh warnings and errors
     gmsh.option.setNumber("General.Verbosity", 2)
@@ -75,8 +75,8 @@ def mesh_contour(coord: np.ndarray, mesh_file: Path = None) -> int:
         gmsh.write(str(mesh_file))
 
     # # Open mesh in GUI
-    if '-nopopup' not in sys.argv:
-        gmsh.fltk.run()
+    # if '-nopopup' not in sys.argv:
+    #     gmsh.fltk.run()
 
     gmsh.model.remove()
     # gmsh.finalize()

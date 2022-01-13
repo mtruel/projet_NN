@@ -15,6 +15,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+
+from database_gen import gen_mesh_one
+
 """
 But : Prédire le nombre N1 de point dans un polygone donnée
 
@@ -157,6 +160,7 @@ class nn1_dataclass:
         # Loss and accuracy data
         self.loss_history: np.ndarray = np.zeros(0)
         self.accuracy_history: np.ndarray = np.zeros(0)
+        self.std_history: np.ndarray = np.zeros(0)
         if not(self.clean_start):
             try:
                 trace = np.loadtxt(self.trace_path)
@@ -168,7 +172,7 @@ class nn1_dataclass:
                 print("Pas d'ancienne trace")
 
         # Plot
-        self.fig, self.axes = plt.subplots(nrows=3)
+        self.fig, self.axes = plt.subplots(nrows=4)
 
         # Define device
         if self.device is None:
@@ -199,9 +203,10 @@ class nn1_dataclass:
 
         return
 
-    def add_epoch(self, avg_loss: float, accuracy: float):
+    def add_epoch(self, avg_loss: float, accuracy: float,std: float):
         self.loss_history = np.append(self.loss_history, avg_loss)
         self.accuracy_history = np.append(self.accuracy_history, accuracy)
+        self.std_history = np.append(self.std_history, std)
         self.current_epoch += 1
         return
 
@@ -218,6 +223,10 @@ class nn1_dataclass:
         self.axes[2].clear()
         self.axes[2].set(ylabel="Accuracy")
         self.axes[2].plot(self.accuracy_history)
+        
+        self.axes[3].clear()
+        self.axes[3].set(ylabel="Std")
+        self.axes[3].plot(self.std_history)
         self.fig.savefig(self.plot_path)
         shutil.copyfile(self.plot_path, self.history_folder /
                         self.plot_path.name)
@@ -349,7 +358,7 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
-    test_loss, correct = 0, 0
+    test_loss, correct, std = 0, 0, 0
 
     with torch.no_grad():
         for X, y in dataloader:
@@ -359,13 +368,17 @@ def test_loop(dataloader: DataLoader, model: NN1, loss_fn: nn.L1Loss, device):
             test_loss += loss_fn(pred, y).item()
             # print(f"=======================\n{pred} \n {y}\n")
             # print(torch.round( pred.squeeze()))
+            std = torch.std(pred - y).type(torch.float).item()
             correct += (torch.round(pred) ==
                         y).type(torch.float).sum().item()
+            # print(std)
+            # print("fin")
 
+    # print("std",std)
     test_loss /= num_batches
     correct /= size
     # print(f"Test Error: Accuracy: {(100*correct):>0.4f}%, Avg loss: {test_loss:>8f} \n", sep=' ', end='', flush=True)
-    return test_loss, correct
+    return test_loss, correct,std
 
 
 def train_model(parameters: nn1_dataclass):
@@ -413,15 +426,15 @@ def train_model(parameters: nn1_dataclass):
         # Learn
         train_loop(train_dataloader, model, loss, opt, parameters.device)
         # Test
-        avg_loss, accuracy = test_loop(
+        avg_loss, accuracy,std = test_loop(
             test_dataloader, model, loss, parameters.device)
 
         # Save in trace
-        parameters.add_epoch(avg_loss, accuracy)
+        parameters.add_epoch(avg_loss, accuracy,std)
 
         # Progress bar
         pbar.set_description(
-            f"Epoch {parameters.current_epoch} | Accuracy: {(100*accuracy):>0.4f}%, Avg loss: {avg_loss:>8f}")
+            f"Epoch {parameters.current_epoch} | Accuracy: {(100*accuracy):>0.4f}%, Avg loss: {avg_loss:>8f}, Std {std:5f}")
 
         # Adaptative LR
         # for g in opt.param_groups:
@@ -438,6 +451,35 @@ def train_model(parameters: nn1_dataclass):
     parameters.update_plot()
     parameters.save_trace()
     parameters.save_model(model)
+    return
+
+
+def test_one(Nc: int, model_path: Path, model_w_path: Path):
+    """
+    Generate a contour of Nc vertice
+    Mesh it, get Ni number of inner vertices
+    Estimate Ni with nn1
+    Compute error
+    """
+    # Ni number of inserted vertices
+    coord, coord_v_inner = gen_mesh_one(Nc)
+    Ni = len(coord_v_inner)
+    print(Ni)
+    ls = 1.0
+
+    # load model
+    model = torch.load(model_path)
+    model.load_state_dict(torch.load(model_w_path))
+    model.eval()
+
+    # create input
+
+    x = np.concatenate(([ls], coord.flatten()))
+
+    # predict
+    # with torch.no_grad():
+    Ni_pred = model(torch.tensor(coord))
+
     return
 
 
@@ -474,7 +516,31 @@ if __name__ == "__main__":
     torch.set_num_threads(4)
     print(f"Torch uses {torch.get_num_threads()} threads")
 
+    # test_one(4,"data/4/model_4.pth","data/4/model_weights_4.pth")
+
     train_model(nn1_dataclass(Nc=4,
+                              lr=1e-4,
+                              w=1e-1,
+                              batch_size=512,
+                              num_epochs=3000,
+                              shuffle=True,
+                              clean_start=True,
+                              num_workers=8,
+                              device="cpu",
+                              ))
+    
+    train_model(nn1_dataclass(Nc=6,
+                              lr=1e-4,
+                              w=1e-1,
+                              batch_size=512,
+                              num_epochs=3000,
+                              shuffle=True,
+                              clean_start=True,
+                              num_workers=8,
+                              device="cpu",
+                              ))
+    
+    train_model(nn1_dataclass(Nc=8,
                               lr=1e-4,
                               w=1e-1,
                               batch_size=512,

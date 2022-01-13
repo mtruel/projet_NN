@@ -18,12 +18,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 """
-<<<<<<< HEAD
-But : Prédire les coordonnées de N1 points dans un polygone donné
-
-=======
 But : Predire les coordonnees de N1 points dans un polygone donne
->>>>>>> 90dd57322eab0696248c69d44640c239e3365d4b
 import database_gen
 
 
@@ -31,13 +26,13 @@ import database_gen
 Feedforward NN with multilayer perceptrons
 
 Goal: Predict the coordinates of N1 points inside a given polygonal contour.
+The approximation given is called N1a.
 
 
 for
 Nc edges
 input :
 Pc
-Grid
 ls
 
 Loss function
@@ -65,8 +60,10 @@ class NN2PolygonDataset(Dataset):
     """
 
     # Constructor
-    def __init__(self, annotation_file: Path, polygons_dir: Path):
+    def __init__(self, annotation_file: Path, polygons_dir: Path, grid_dir: Path, score_dir: Path):
         self.polygons_dir = Path(polygons_dir)
+        self.grid_dir = Path(grid_dir)
+        self.score_dir = Path(score_dir)
         try:
             self.polygons_labels = pd.read_csv(annotation_file)
         except FileNotFoundError as err:
@@ -77,16 +74,19 @@ class NN2PolygonDataset(Dataset):
         return len(self.polygons_labels)
 
     def __getitem__(self, idx):
-        polygon_path = self.polygons_dir / \
-            Path(self.polygons_labels.iloc[idx, 0])
+        polygon_path = self.polygons_dir / Path(self.polygons_labels.iloc[idx, 0])
+        grid_path = self.grid_dir / Path(self.polygons_labels.iloc[idx, 1])
+        score_path = self.score_dir / Path(self.polygons_labels.iloc[idx, 2])
         try:
             polygon = np.loadtxt(polygon_path)
+            grid = np.loadtxt(grid_path)
+            scores = np.loadtxt(score_path)
         except IOError as err:
             print(err)
             exit(-1)
 
-        N1 = self.polygons_labels.iloc[idx, 1]
-        return polygon, N1
+        x = np.concatenate((polygon, grid), axis=None)
+        return x, scores
 
 
 # poly{Nc}_{idx}.dat
@@ -94,7 +94,7 @@ class NN2PolygonDataset(Dataset):
 # idx,Nc
 class NN2(nn.Module):
 
-    def __init__(self, n_features: int, Np: int):
+    def __init__(self, n_features: int, Np : int):
         Ngk = int(n_features/Np)
         super(NN2, self).__init__()
         self.l1 = nn.Linear(n_features, 2 * n_features + Ngk)
@@ -132,7 +132,7 @@ def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer
     size = len(dataloader.dataset)
     model.train()
     for batch, (x, y) in enumerate(dataloader):
-        x, y = x.to(device), y.to(device)
+        x, y = torch.tensor(x).to(device), torch.tensor(y).to(device)
         y_pred = model(x)
         loss = loss_fn(y_pred.squeeze(), y)
 
@@ -210,6 +210,8 @@ class nn2_parameters:
     # Main data folder
     data_path: Path = None
     polygons_path: Path = None
+    grid_path: Path = None
+    score_path: Path = None
     label_path: Path = None
 
     trace_path: Path = None
@@ -234,6 +236,8 @@ class nn2_parameters:
         if self.data_path is None:
             self.data_path = Path(f"data/{self.Nc}")
             self.polygons_path = self.data_path / Path(f"polygons")
+            self.grid_path = self.data_path / Path(f"grid")
+            self.score_path = self.data_path / Path(f"scores")
             self.label_path = self.data_path / Path(f"labels_nn2")
             self.model_path = self.data_path / Path(f"model_{self.Nc}.pth")
             self.model_w_path = self.data_path / \
@@ -336,7 +340,7 @@ class nn2_parameters:
 def train_model(parameters: nn2_parameters):
     # Chargement des données
     dataset = NN2PolygonDataset(
-        parameters.label_path, parameters.polygons_path)
+        parameters.label_path, parameters.polygons_path, parameters.grid_path, parameters.score_path)
 
     len_train = int(len(dataset)*parameters.training_data_ratio)
     len_test = int(len(dataset) - len_train)

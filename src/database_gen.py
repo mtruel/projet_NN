@@ -135,6 +135,7 @@ def gen_database(Nc: int,  # Number of contour edges
                  meshes_folder: Path = Path("meshes"),
                  polygons_folder: Path = Path("polygons"),
                  grid_folder: Path = Path("grid"),
+                 scores_folder: Path = Path("scores"),
                  # Label file
                  label_filename: Path = Path("labels"),
                  clean_data_dirs: bool = True) -> None:
@@ -185,6 +186,7 @@ def gen_database(Nc: int,  # Number of contour edges
     (data_path_nb / polygons_folder).mkdir(exist_ok=True)
     (data_path_nb / meshes_folder).mkdir(exist_ok=True)
     (data_path_nb / grid_folder).mkdir(exist_ok=True)
+    (data_path_nb / scores_folder).mkdir(exist_ok=True)
 
     with open(data_path / str(Nc) / label_filename, "w+") as label_file:
         # Header
@@ -212,13 +214,18 @@ def gen_database(Nc: int,  # Number of contour edges
                 scores = calculate_score_array(grid, coord_inner_v)
 
                 grid_filename = "grid"+str(ls)+"_"+str(idx)
+                scores_filename = "scores"+str(ls)+"_"+str(idx)
 
                 # Create grid coordinate file
                 if check_NN() == "NN2":
                     with open(data_path / str(Nc) / grid_folder / grid_filename, "w+") as grid_file:
                         for i in range(len(grid)):
                             grid_file.write(f"{grid[i][0]} {grid[i][1]}\n")
-
+                # Create grid coordinate file
+                if check_NN() == "NN2":
+                    with open(data_path / str(Nc) / scores_folder / scores_filename, "w+") as scores_file:
+                        for i in range(len(scores)):
+                            scores_file.write(f"{scores[i]}\n")
                 # Write label files
                 # NN1
                 if check_NN() == "NN1":
@@ -226,7 +233,7 @@ def gen_database(Nc: int,  # Number of contour edges
                 # NN2
                 if check_NN() == "NN2":
                     label_file.write(
-                        f"{polygon_filename},{grid_filename},{scores}\n")
+                        f"{polygon_filename},{grid_filename},{scores_filename}\n")
                 # Write polygon file
                 with open(data_path_nb / polygons_folder / polygon_filename, "w+") as polygon_file:
                     polygon_file.write(str(ls)+"\n")
@@ -291,7 +298,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     :rtype: np.ndarray
     """
     # Grid scale factor
-    Gscale_factor = 0.01  # 0.05 is enough -> 40*40 grid for ls = 1
+    Gscale_factor = 0.05  # 0.05 is enough -> 40*40 grid for ls = 1
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(2/Gscale)  # number of nodes on the grid side
     grid = np.empty((0, 2))
@@ -301,12 +308,14 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
         for j in range(nnodes):
             if is_in_contour(x, y, coord):
                 grid = np.append(grid, [[x, y]], axis=0)
-
             x += Gscale
             # print(i,j)
             # print(grid[i+j,0],grid[i+j,1])
         x = -Gscale*nnodes/2
         y += Gscale
+    reste = nnodes**2 - len(grid)
+    for i in range(reste):
+        grid = np.append(grid, [[0., 0.]], axis=0)
     return grid
 
 
@@ -462,7 +471,7 @@ def main():
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
     request = dict({(1.0, 3)})
-    gen_database(5, request)
+    gen_database(6, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})

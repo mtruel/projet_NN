@@ -18,7 +18,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 """
-But : Prédire les coordonnées de N1 points dans un polygone donnée
+But : Prédire les coordonnées de N1 points dans un polygone donné
 
 import database_gen
 
@@ -27,13 +27,13 @@ import database_gen
 Feedforward NN with multilayer perceptrons
 
 Goal: Predict the coordinates of N1 points inside a given polygonal contour.
-The approximation given is called N1a.
 
 
 for
 Nc edges
 input :
 Pc
+Grid
 ls
 
 Loss function
@@ -90,7 +90,7 @@ class NN2PolygonDataset(Dataset):
 # idx,Nc
 class NN2(nn.Module):
 
-    def __init__(self, n_features: int, Np : int):
+    def __init__(self, n_features: int, Np: int):
         Ngk = int(n_features/Np)
         super(NN2, self).__init__()
         self.l1 = nn.Linear(n_features, 2 * n_features + Ngk)
@@ -230,7 +230,7 @@ class nn2_parameters:
         if self.data_path is None:
             self.data_path = Path(f"data/{self.Nc}")
             self.polygons_path = self.data_path / Path(f"polygons")
-            self.label_path = self.data_path / Path(f"labels")
+            self.label_path = self.data_path / Path(f"labels_nn2")
             self.model_path = self.data_path / Path(f"model_{self.Nc}.pth")
             self.model_w_path = self.data_path / \
                 Path(f"model_weights_{self.Nc}.pth")
@@ -426,7 +426,7 @@ def predict():
 
 
 if __name__ == "__main__":
-    train_model(nn1_parameters(Nc=6, Np=4
+    train_model(nn2_parameters(Nc=6, Np=1,
                                lr=1e-4,
                                w=1e-2,
                                batch_size=512,

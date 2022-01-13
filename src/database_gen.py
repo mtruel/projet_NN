@@ -134,6 +134,7 @@ def gen_database(Nc: int,  # Number of contour edges
                  # Subfolders
                  meshes_folder: Path = Path("meshes"),
                  polygons_folder: Path = Path("polygons"),
+                 grid_folder: Path = Path("grid"),
                  # Label file
                  label_filename: Path = Path("labels"),
                  clean_data_dirs: bool = True) -> None:
@@ -160,7 +161,10 @@ def gen_database(Nc: int,  # Number of contour edges
     :return: Creates the output files in the desired folder
     :rtype:
     """
-
+    if (check_NN() == "NN1"):
+        label_filename = Path("labels_nn1")
+    if (check_NN() == "NN2"):
+        label_filename = Path("labels_nn2")
     print(f"Generating database for {Nc} vertices.")
 
     gmsh.initialize()
@@ -180,9 +184,9 @@ def gen_database(Nc: int,  # Number of contour edges
     # data_path.mkdir(exist_ok=True)
     (data_path_nb / polygons_folder).mkdir(exist_ok=True)
     (data_path_nb / meshes_folder).mkdir(exist_ok=True)
+    (data_path_nb / grid_folder).mkdir(exist_ok=True)
 
-    # Create label file
-    with open(data_path / check_NN() / label_filename, "w+") as label_file:
+    with open(data_path / str(Nc) / label_filename, "w+") as label_file:
         # Header
         if check_NN() == "NN1":
             label_file.write("contour_file, N1\n")
@@ -207,9 +211,11 @@ def gen_database(Nc: int,  # Number of contour edges
                 # get scores
                 scores = calculate_score_array(grid, coord_inner_v)
 
+                grid_filename = "grid"+str(ls)+"_"+str(idx)
+
                 # Create grid coordinate file
                 if check_NN() == "NN2":
-                    with open(data_path / "NN2" / "grid", "w+") as grid_file:
+                    with open(data_path / str(Nc) / grid_folder / grid_filename, "w+") as grid_file:
                         for i in range(len(grid)):
                             grid_file.write(f"{grid[i][0]} {grid[i][1]}\n")
 
@@ -219,7 +225,8 @@ def gen_database(Nc: int,  # Number of contour edges
                     label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
                 # NN2
                 if check_NN() == "NN2":
-                    label_file.write(f"{polygon_filename},{scores}\n")
+                    label_file.write(
+                        f"{polygon_filename},{grid_filename},{scores}\n")
                 # Write polygon file
                 with open(data_path_nb / polygons_folder / polygon_filename, "w+") as polygon_file:
                     polygon_file.write(str(ls)+"\n")
@@ -454,8 +461,8 @@ def main():
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    request = dict({(1.0, 1)})
-    gen_database(12, request)
+    request = dict({(1.0, 3)})
+    gen_database(5, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})

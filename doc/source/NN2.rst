@@ -40,6 +40,7 @@ instead of optimizing a few hundredths every iteration.
 .. figure:: images/schemaNN_grid.svg
   :width: 300
   :align: center
+  :class: no-scaled-link
   :alt: Schema of the grid with a contour of 7 nodes
 
   Example of grid for a polygon of 7 nodes  
@@ -63,11 +64,13 @@ Each grid node now has to be graded with a score defined as
 the distance to the closest mesh node. The function ``score_of_node`` gives the score of a given node 
 and ``calculate_score_array`` the list of scores for each point of the grid inside the polygon.
 
-.. figure:: images/scores_examples.png
+.. figure:: images/scores_mesh_examples.png
+  :width: 500
   :align: center
+  :class: no-scaled-link
   :alt: score examples
 
-  Two examples of scores repartition for polygons of 7 nodes. We can see the 5 nodes placed by gmsh.  
+  Example of scores repartition for polygons of 7 nodes. We can see the 4 nodes placed by gmsh.  
 
 NN2 will have to return this list of scores on its own once trained given 
 the coordinates of the grid points inside the polygon and the number of inner nodes.

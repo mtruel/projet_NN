@@ -461,7 +461,7 @@ def main():
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    request = dict({(1.0, 3)})
+    request = dict({(1.0, 1)})
     gen_database(5, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)

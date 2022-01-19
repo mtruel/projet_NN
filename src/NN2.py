@@ -74,7 +74,8 @@ class NN2PolygonDataset(Dataset):
         return len(self.polygons_labels)
 
     def __getitem__(self, idx):
-        polygon_path = self.polygons_dir / Path(self.polygons_labels.iloc[idx, 0])
+        polygon_path = self.polygons_dir / \
+            Path(self.polygons_labels.iloc[idx, 0])
         grid_path = self.grid_dir / Path(self.polygons_labels.iloc[idx, 1])
         score_path = self.score_dir / Path(self.polygons_labels.iloc[idx, 2])
         try:
@@ -84,8 +85,13 @@ class NN2PolygonDataset(Dataset):
         except IOError as err:
             print(err)
             exit(-1)
+        grid_1d = []
+        for k in range(len(grid)):
+            grid_1d.append(grid[k][0])
+            grid_1d.append(grid[k][1])
+        grid_1d = np.array(grid_1d)
 
-        x = np.concatenate((polygon, grid), axis=None)
+        x = np.concatenate((polygon, grid_1d), axis=None)
         return x, scores
 
 
@@ -94,15 +100,17 @@ class NN2PolygonDataset(Dataset):
 # idx,Nc
 class NN2(nn.Module):
 
-    def __init__(self, n_features: int, Np : int):
-        Ngk = int(n_features/Np)
+    def __init__(self, n_features: int, Np: int, N_grid: int):
         super(NN2, self).__init__()
-        self.l1 = nn.Linear(n_features, 2 * n_features + Ngk)
-        self.b1 = nn.BatchNorm1d(2 * n_features + Ngk)
-        self.l2 = nn.Linear(2 * n_features + Ngk, 2 * n_features + Ngk)
-        self.b2 = nn.BatchNorm1d(2 * n_features + Ngk)
-        self.l3 = nn.Linear(2 * n_features + Ngk, 1)
+        Ngk = int(N_grid/Np)
+        Nc = int((n_features-1)/2 )
+        self.l1 = nn.Linear(2*Ngk+n_features, 2 * Nc+ Ngk)
+        self.b1 = nn.BatchNorm1d(2 * Nc + Ngk)
+        self.l2 = nn.Linear(2 * Nc + Ngk, 2 * Nc + Ngk)
+        self.b2 = nn.BatchNorm1d(2 * Nc + Ngk)
+        self.l3 = nn.Linear(2 * Nc + Ngk, Ngk)
         self.b3 = nn.BatchNorm1d(Ngk)
+        
 
     def forward(self, x: torch.Tensor):
         x = self.l1(x.float())
@@ -134,7 +142,7 @@ def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer
     for batch, (x, y) in enumerate(dataloader):
         x, y = torch.tensor(x).to(device), torch.tensor(y).to(device)
         y_pred = model(x)
-        loss = loss_fn(y_pred.squeeze(), y)
+        loss = loss_fn(y_pred.squeeze(), y.squeeze())
 
         optimizer.zero_grad()
         loss.backward()
@@ -168,7 +176,7 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
             X, y = X.to(device), y.to(device)
             pred = model(X)
             pred = pred.squeeze()
-            test_loss += loss_fn(pred, y).item()
+            test_loss += loss_fn(pred, y.squeeze()).item()
             # print(f"=======================\n{pred} \n {y}\n")
             # print(torch.round( pred.squeeze()))
             correct += (torch.round(pred) ==
@@ -190,6 +198,8 @@ class nn2_parameters:
     Nc: int
     # Number of grid patches
     Np: int
+    # Number of point in grid
+    N_grid: int
     # Hyperparameters
     # Learning rate
     lr: float
@@ -357,7 +367,7 @@ def train_model(parameters: nn2_parameters):
         test_dataset, batch_size=parameters.batch_size, shuffle=parameters.shuffle)
 
     # Model
-    model = NN2(2 * parameters.Nc + 1, parameters.Np)
+    model = NN2(2 * parameters.Nc + 1, parameters.Np, parameters.N_grid)
     # Load a pretrainned model
     if not(parameters.clean_start):
         try:
@@ -434,11 +444,13 @@ def predict():
 
 
 if __name__ == "__main__":
-    train_model(nn2_parameters(Nc=6, Np=1,
+    train_model(nn2_parameters(Nc=6,
+                               Np=1,
+                               N_grid=1600,
                                lr=1e-4,
                                w=1e-2,
                                batch_size=512,
                                num_epochs=5000,
                                shuffle=True,
-                               clean_start=False,
+                               clean_start=True,
                                ))

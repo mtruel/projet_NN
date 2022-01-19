@@ -1,3 +1,4 @@
+from json.tool import main
 import torch.nn.functional as func
 import torch.nn as nn
 import torch.optim as optim
@@ -52,6 +53,8 @@ du coup je dois :
     creer un tenseur avec Ntrain elts D=(Pc,ls,N1)
 
 """
+
+maintenant= False
 
 
 class NN2PolygonDataset(Dataset):
@@ -170,12 +173,15 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
     num_batches = len(dataloader)
     model.eval()
     test_loss, correct = 0, 0
+    global maintenant
 
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             pred = model(X)
             pred = pred.squeeze()
+            if(maintenant):
+                np.savetxt("score.dat",pred.numpy())
             test_loss += loss_fn(pred, y.squeeze()).item()
             # print(f"=======================\n{pred} \n {y}\n")
             # print(torch.round( pred.squeeze()))
@@ -388,6 +394,13 @@ def train_model(parameters: nn2_parameters):
     # Plot created outside loop for efficient memory
     fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
+        global maintenant
+        if(epoch==10):
+            maintenant=True
+        else:
+            maintenant=False
+
+            
         # Learn
         train_loop(train_dataloader, model, loss, opt, parameters.device)
         # Test

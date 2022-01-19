@@ -1,0 +1,4 @@
+contour_file, grid_file, scores
+coord1.0_0.dat,grid1.0_0,scores1.0_0
+coord1.0_1.dat,grid1.0_1,scores1.0_1
+coord1.0_2.dat,grid1.0_2,scores1.0_2

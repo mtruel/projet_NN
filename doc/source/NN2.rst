@@ -37,6 +37,31 @@ However, the polygon is scaled and is always contained in the unit circle.
 It is then more conveignant and faster to keep the unit size 
 instead of optimizing a few hundredths every iteration.
 
+.. figure:: images/schemaNN_grid.svg
+  :width: 300
+  :align: center
+  :alt: Schema of the grid with a contour of 7 nodes
+
+  Example of grid for a polygon of 7 nodes  
+
+The grid generation is made by the ``create_grid()`` function.
+
+^^^^^^^^^^^^^^^^^
+Inside nodes
+^^^^^^^^^^^^^^^^^
+
+Once the grid is generated, we need to find the coordinates of the grid nodes 
+that are inside the polygon. 
+The function ``is_in_contour`` does it by using the Even-odd rule. 
+The algorithm is taken from `this python code <https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule#cite_note-3>`_.
+
+^^^^^^^^^^^^^^^^^
+Scores of nodes
+^^^^^^^^^^^^^^^^^
+
+Each grid node now has to be graded with a score defined as 
+the distance to the closest mesh node. The function ``score_of_node`` gives the score of a given node 
+and ``calculate_score_array`` the list of scores for each point of the grid inside the polygon.
 
 ---------------------
  Neural Network

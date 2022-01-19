@@ -5,7 +5,7 @@ Neural Network N°2
  Goal of the neural network
 ----------------------------
 
-This Neural Network aims at guessing the coordinates of the inner nodes. 
+This Neural Network (NN2) aims at guessing the coordinates of the inner nodes. 
 The algorithm takes as input the number of inner nodes approximated by the first neural network,
 and the coordinates of the nodes of a cartesian grid that are inside the polygon.
 
@@ -63,6 +63,39 @@ Each grid node now has to be graded with a score defined as
 the distance to the closest mesh node. The function ``score_of_node`` gives the score of a given node 
 and ``calculate_score_array`` the list of scores for each point of the grid inside the polygon.
 
+.. figure:: images/scores_examples.png
+  :align: center
+  :alt: score examples
+
+  Two examples of scores repartition for polygons of 7 nodes. We can see the 5 nodes placed by gmsh.  
+
+NN2 will have to return this list of scores on its own once trained given 
+the coordinates of the grid points inside the polygon and the number of inner nodes.
+
 ---------------------
  Neural Network
 ---------------------
+
+First, all the grid nodes inside the polygon are given to the network.
+Later, we could split the grid in multiple parts to give more data to the network.
+
+------------------------
+ Final node positioning
+------------------------
+
+Once the list of scores is guessed by the NN2, we have to guess the coordinates of the mesh nodes, and 
+make an interpolation to place the nodes more precisely.
+
+^^^^^^^^^^^^^^^^^^
+Find the minimums
+^^^^^^^^^^^^^^^^^^
+
+A solution to find the nodes is made by the following algorithm : 
+
+* Find the current node with the minimum score and mark it
+* Remove all the nodes within a given radius around the marked node
+* Find the new minimum and repeat
+
+If the radius is large enough, the new minimum should be in a 
+different position, and the operation can be repeated as much as there 
+are inner nodes. 

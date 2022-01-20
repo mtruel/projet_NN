@@ -49,6 +49,14 @@ Automation
 Currently, only NN1 and NN2 are implemented. Thus only two of the three databases are generated. 
 Nevertheless, to facilitate the use of the neural networks, a file structure has been established. At the root of the database, a label file lists all elements. On every line, there is the path to the file containing the input of the NN and the expected output. This structure is described Fig(). 
 
+.. _fig-meshed_polygon:
+.. figure:: images/scale_rotate.png
+  :width: 600
+  :class: no-scaled-link
+  :align: center
+
+  Rotation and scaling of a polygon
+
 ------------------
 Missing feature
 ------------------

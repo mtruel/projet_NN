@@ -194,8 +194,8 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
                 fig = plt.figure()
                 ax1 = fig.add_subplot(111)
 
-                ax1.scatter(abscisses, ordonnees, c=score_test)
-                #fig.colorbar(cmap="jet")
+                sp = ax1.scatter(abscisses, ordonnees, c=score_test)
+                fig.colorbar(sp)
                 ax1.set(title="Score of each point of the grid and position interpolated")
                 fig.savefig("scatter.png")
             test_loss += loss_fn(pred, y.squeeze()).item()
@@ -411,7 +411,7 @@ def train_model(parameters: nn2_parameters):
     fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
         global maintenant
-        if(epoch==30):
+        if(epoch==5000):
             maintenant=True
         else:
             maintenant=False

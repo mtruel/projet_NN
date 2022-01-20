@@ -470,8 +470,8 @@ def main():
     # Gen database
     # request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
 
-    request = dict({(1.0, 3)})
-    gen_database(6, request)
+    request = dict({(1.0, 90)})
+    gen_database(5, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})

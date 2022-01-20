@@ -102,3 +102,11 @@ A solution to find the nodes is made by the following algorithm :
 If the radius is large enough, the new minimum should be in a 
 different position, and the operation can be repeated as much as there 
 are inner nodes. 
+
+.. figure:: images/radius_scores.png
+  :width: 500
+  :align: center
+  :class: no-scaled-link
+  :alt: radius examples
+
+  Example of radius around the minimum (red point) allowing the other red point to become the second minimum

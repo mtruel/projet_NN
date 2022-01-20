@@ -348,7 +348,10 @@ def score_of_node(node: np.ndarray, nodes: np.ndarray) -> float:
     for i in range(0, nb_nodes):
         dist[i] = math.sqrt((node[0]-nodes[2*i])**2 +
                             (node[1]-nodes[2*i+1])**2)
-    return min(dist)
+    try:
+        return min(dist)
+    except:
+        print("no inner vertices in this polygon")
 
 
 def calculate_score_array(grid: np.ndarray, coord_inner_v: np.ndarray) -> np.ndarray:

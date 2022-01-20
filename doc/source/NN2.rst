@@ -109,4 +109,22 @@ are inner nodes.
   :class: no-scaled-link
   :alt: radius examples
 
-  Example of radius around the minimum (red point) allowing the other red point to become the second minimum
+  Example of radius around the minimum (red point) 
+  allowing the other red point to become the second minimum
+
+^^^^^^^^^^^^^^^^^^
+Interpolation
+^^^^^^^^^^^^^^^^^^
+
+Once we have the position of each inner node of the mesh locked on the grid, 
+we choose to interpolate the scores of the grid points around each inner node
+to place it more accurately out of the grid constraint.
+
+.. figure:: images/interpolation.svg
+  :width: 400
+  :align: center
+  :class: no-scaled-link
+  :alt: interpolation schema
+
+  Simple schema of how the final node (red) is interpolated 
+  from the scores arond the minimum (center)

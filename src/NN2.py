@@ -113,7 +113,7 @@ class NN2(nn.Module):
         self.b2 = nn.BatchNorm1d(2 * Nc + Ngk)
         self.l3 = nn.Linear(2 * Nc + Ngk, Ngk)
         self.b3 = nn.BatchNorm1d(Ngk)
-        
+
 
     def forward(self, x: torch.Tensor):
         x = self.l1(x.float())
@@ -143,7 +143,7 @@ def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer
     size = len(dataloader.dataset)
     model.train()
     for batch, (x, y) in enumerate(dataloader):
-        x, y = torch.tensor(x).to(device), torch.tensor(y).to(device)
+        x, y = x.to(device), y.to(device)
         y_pred = model(x)
         loss = loss_fn(y_pred.squeeze(), y.squeeze())
 
@@ -182,6 +182,7 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
             pred = pred.squeeze()
             if(maintenant):
                 np.savetxt("score.dat",pred.numpy())
+                np.savetxt("entree.dat", X.numpy())
             test_loss += loss_fn(pred, y.squeeze()).item()
             # print(f"=======================\n{pred} \n {y}\n")
             # print(torch.round( pred.squeeze()))
@@ -395,12 +396,12 @@ def train_model(parameters: nn2_parameters):
     fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
         global maintenant
-        if(epoch==10):
+        if(epoch==1000):
             maintenant=True
         else:
             maintenant=False
 
-            
+
         # Learn
         train_loop(train_dataloader, model, loss, opt, parameters.device)
         # Test

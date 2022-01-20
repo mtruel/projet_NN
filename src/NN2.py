@@ -193,9 +193,9 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
                     ordonnees.append(grille[i+1])
                 fig = plt.figure()
                 ax1 = fig.add_subplot(111)
-                
-                ax1.scatter(abscisses, ordonnees, score_test)
-                fig.colorbar(cmap="jet")
+
+                ax1.scatter(abscisses, ordonnees, c=score_test)
+                #fig.colorbar(cmap="jet")
                 ax1.set(title="Score of each point of the grid and position interpolated")
                 fig.savefig("scatter.png")
             test_loss += loss_fn(pred, y.squeeze()).item()

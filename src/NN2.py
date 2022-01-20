@@ -182,7 +182,19 @@ def test_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, device):
             pred = pred.squeeze()
             if(maintenant):
                 np.savetxt("score.dat",pred.numpy())
-                np.savetxt("entree.dat", X.numpy())
+                score_test = np.loadtxt("score.dat")
+                x_copie = X.numpy().flatten()
+                grille = x_copie[13:]
+                abscisses = []
+                ordonnees = []
+                np.savetxt("entree.dat", grille)
+                for i in range(0,len(grille),2):
+                    abscisses.append(grille[i])
+                    ordonnees.append(grille[i+1])
+                plt.scatter(abscisses, ordonnees, score_test)
+                plt.colorbar()
+                plt.title("Score of each point of the grid and position interpolated")
+                plt.show()
             test_loss += loss_fn(pred, y.squeeze()).item()
             # print(f"=======================\n{pred} \n {y}\n")
             # print(torch.round( pred.squeeze()))
@@ -396,7 +408,7 @@ def train_model(parameters: nn2_parameters):
     fig, axes = plt.subplots(nrows=3)
     for epoch in pbar:
         global maintenant
-        if(epoch==1000):
+        if(epoch==500):
             maintenant=True
         else:
             maintenant=False
@@ -455,6 +467,7 @@ def predict():
     model.eval()
 
     return model(torch.Tensor(input))  # /!\ Ne fonctionne pas /!\
+
 
 
 if __name__ == "__main__":

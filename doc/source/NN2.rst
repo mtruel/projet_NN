@@ -48,7 +48,7 @@ instead of optimizing a few hundredths every iteration.
 The grid generation is made by the ``create_grid()`` function.
 
 ^^^^^^^^^^^^^^^^^
-Inside nodes
+Inner nodes
 ^^^^^^^^^^^^^^^^^
 
 Once the grid is generated, we need to find the coordinates of the grid nodes 
@@ -61,8 +61,9 @@ Scores of nodes
 ^^^^^^^^^^^^^^^^^
 
 Each grid node now has to be graded with a score defined as 
-the distance to the closest mesh node. The function ``score_of_node()`` gives the score of a given node 
-and ``calculate_score_array()`` the list of scores for each point of the grid inside the polygon.
+the distance to the closest mesh node. The function ``score_of_node()`` 
+gives the score of a given node and ``calculate_score_array()`` 
+the list of scores for each point of the grid inside the polygon.
 
 .. figure:: images/scores_mesh_examples.png
   :width: 500
@@ -78,6 +79,10 @@ the coordinates of the grid points inside the polygon and the number of inner no
 ---------------------
  Neural Network
 ---------------------
+
+The NN2 takes as input the number of nodes and the coordinates of the
+grid nodes inside the polygon. It is trained by receiving a score list for 
+every node of the grid and tries to guess the scores by itself after the training.
 
 First, all the grid nodes inside the polygon are given to the network.
 Later, we could split the grid in multiple parts to give more data to the network.
@@ -124,6 +129,18 @@ with a simple condition based on the circle equation:
     scores = np.delete(scores, to_remove)
     return grid, scores
 
+The choice of ``radius`` is important, because a big radius implies more 
+computation time, but a too small radius can misplace the points, 
+like shown figure below.
+
+.. figure:: images/erreur_point_r0.01_gscale0.05.png
+  :width: 500
+  :align: center
+  :class: no-scaled-link
+  :alt: radius examples
+
+  Example of point badly placed due to a too small radius 
+  (``radius = 0.01*ls`` and ``Gscale=0.05*ls``)
 
 ^^^^^^^^^^^^^^^^^^
 Interpolation

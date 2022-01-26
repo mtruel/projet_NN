@@ -110,16 +110,34 @@ def create_random_contour(nvert: int) -> np.ndarray:
     return coord
 
 
+def check_NN() -> str:
+    """Checks the argv and returns it in string format
+
+    :return: "NN1","NN2", or appropriate errors
+    :rtype: string
+    """
+    if '-NN1' in sys.argv:
+        return "NN1"
+    if '-NN2' in sys.argv:
+        return "NN2"
+    if '-NN3' in sys.argv:
+        raise TypeError("NN3 not yet implemented.")
+    else:
+        raise TypeError("Please add -NN1 or -NN2 when compiling")
+
+
 def gen_database(Nc: int,  # Number of contour edges
                  # Dictionnary of requested polygons
                  # Request fomating dict({(ls,nb_of_polygons),(ls,nb_of_polygons)....})
                  requested_polygons: dict,
                  # Delete any previous files to start clean
                  # Data main folder
-                 data_path: Path = Path("data"),
+                 data_path: Path = Path("data/"),
                  # Subfolders
                  meshes_folder: Path = Path("meshes"),
                  polygons_folder: Path = Path("polygons"),
+                 grid_folder: Path = Path("grid"),
+                 scores_folder: Path = Path("scores"),
                  # Label file
                  label_filename: Path = Path("labels"),
                  clean_data_dirs: bool = True) -> None:
@@ -146,30 +164,39 @@ def gen_database(Nc: int,  # Number of contour edges
     :return: Creates the output files in the desired folder
     :rtype:
     """
+    if (check_NN() == "NN1"):
+        label_filename = Path("labels_nn1")
+    if (check_NN() == "NN2"):
+        label_filename = Path("labels_nn2")
     print(f"Generating database for {Nc} vertices.")
-
-    # Add polygons folder
-    data_path = data_path / Path(str(Nc))
-
-    # Delete any previous files to start clean
-    if clean_data_dirs:
-        shutil.rmtree(data_path, ignore_errors=True)
-
-    # create tree
-    try:
-        os.makedirs(data_path)
-    except FileExistsError:
-        pass
-    # data_path.mkdir(exist_ok=True)
-    (data_path / polygons_folder).mkdir(exist_ok=True)
-    (data_path / meshes_folder).mkdir(exist_ok=True)
 
     gmsh.initialize()
 
-    # Create label file
-    with open(data_path / label_filename, "w+") as label_file:
+    # Add polygons folder
+    data_path_nb = data_path / Path(str(Nc))
+
+    # Delete any previous files to start clean
+    if clean_data_dirs:
+        shutil.rmtree(data_path_nb, ignore_errors=True)
+
+    # create tree
+    try:
+        os.makedirs(data_path_nb)
+    except FileExistsError:
+        pass
+    # data_path.mkdir(exist_ok=True)
+    (data_path_nb / polygons_folder).mkdir(exist_ok=True)
+    (data_path_nb / meshes_folder).mkdir(exist_ok=True)
+    (data_path_nb / grid_folder).mkdir(exist_ok=True)
+    (data_path_nb / scores_folder).mkdir(exist_ok=True)
+
+    with open(data_path / str(Nc) / label_filename, "w+") as label_file:
         # Header
-        label_file.write("filename, N1\n")
+        if check_NN() == "NN1":
+            label_file.write("contour_file, N1\n")
+        if check_NN() == "NN2":
+            label_file.write("contour_file, grid_file, scores\n")
+
         # Generate polygons, tqdm create a progress bar
         idx = 0
         for ls in sorted(requested_polygons.keys()):
@@ -180,20 +207,53 @@ def gen_database(Nc: int,  # Number of contour edges
                 coord = create_random_contour(Nc)
                 # Normalisation
                 pr.procrustes(coord)
-                # Mesh polygon and get nb of inner vertices
-                nb_inner_vert = len(mesh_contour(
-                    coord, data_path / meshes_folder / polygon_filename.with_suffix(".mesh")))/2
-                # Write label files
-                label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
+                # creation of grid
+                grid = create_grid(coord, ls)
+                # Mesh polygon and get coordinates of inner vertices + their number
+                coord_inner_v = mesh_contour(coord, "out.mesh")
+                nb_inner_vert = len(coord_inner_v)//2
+                # get scores
+                scores = calculate_score_array(grid, coord_inner_v)
 
+                grid_filename = "grid"+str(ls)+"_"+str(idx)
+                scores_filename = "scores"+str(ls)+"_"+str(idx)
+
+                # Create grid coordinate file
+                if check_NN() == "NN2":
+                    with open(data_path / str(Nc) / grid_folder / grid_filename, "w+") as grid_file:
+                        for i in range(len(grid)):
+                            grid_file.write(f"{grid[i][0]} {grid[i][1]}\n")
+                # Create grid coordinate file
+                if check_NN() == "NN2":
+                    with open(data_path / str(Nc) / scores_folder / scores_filename, "w+") as scores_file:
+                        for i in range(len(scores)):
+                            scores_file.write(f"{scores[i]}\n")
+                # Write label files
+                # NN1
+                if check_NN() == "NN1":
+                    label_file.write(f"{polygon_filename}, {nb_inner_vert}\n")
+                # NN2
+                if check_NN() == "NN2":
+                    label_file.write(
+                        f"{polygon_filename},{grid_filename},{scores_filename}\n")
                 # Write polygon file
-                with open(data_path / polygons_folder / polygon_filename, "w+") as polygon_file:
+                with open(data_path_nb / polygons_folder / polygon_filename, "w+") as polygon_file:
                     polygon_file.write(str(ls)+"\n")
                     for i in coord:
                         polygon_file.write(str(i[0])+"\n")
                         polygon_file.write(str(i[1])+"\n")
                 idx += 1
     gmsh.finalize()
+    # Show inner grid with scores and interpolated coordinates:
+    if '-grid' in sys.argv:
+        plt.scatter(np.transpose(grid)[0], np.transpose(
+            grid)[1], c=scores)  # score map of the grid
+        plt.colorbar()
+        out_vertices = compute_vertices(ls, coord, grid, scores, nb_inner_vert)
+        plt.scatter(np.transpose(out_vertices)[
+                    0], np.transpose(out_vertices)[1], color="red")  # points put after interpolation
+        plt.title("Score of each point of the grid and position interpolated")
+        plt.show()
     return
 
 
@@ -253,7 +313,7 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     :rtype: np.ndarray
     """
     # Grid scale factor
-    Gscale_factor = 0.01
+    Gscale_factor = 0.05  # 0.05 is enough -> 40*40 grid for ls = 1
     Gscale = Gscale_factor * ls  # size of mesh grid
     nnodes = int(2/Gscale)  # number of nodes on the grid side
     grid = np.empty((0, 2))
@@ -262,13 +322,15 @@ def create_grid(coord: np.ndarray, ls: float) -> np.ndarray:
     for i in range(nnodes):
         for j in range(nnodes):
             if is_in_contour(x, y, coord):
-                grid = np.append(grid, [[x, y]], axis=0)  # NOT WORKING !!!!!
-
+                grid = np.append(grid, [[x, y]], axis=0)
             x += Gscale
             # print(i,j)
             # print(grid[i+j,0],grid[i+j,1])
         x = -Gscale*nnodes/2
         y += Gscale
+    reste = nnodes**2 - len(grid)
+    for i in range(reste):
+        grid = np.append(grid, [[0., 0.]], axis=0)
     return grid
 
 
@@ -349,6 +411,7 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
     # print("local domain label = ", local_domain_label)
     # print("local domain scores = ", local_domain_scores)
 
+    ###### INTERPOLATION ######
     # barycentric coordinates of the final point
     xs = [0, 1, 2, 5, 6, 7]
     ys = [0, 3, 5, 2, 4, 7]
@@ -371,7 +434,17 @@ def place_inner_vertex(scores: np.array, grid: np.ndarray, ls: float) -> np.arra
     return [xbar, ybar]
 
 
-def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array):
+def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array) -> np.ndarray:
+    """Updates the grid and the scores by removing some non necessary points
+
+    :param float ls: size of an edge inside the polygon
+    :param list vert: coords of an inner vertex
+    :param np.ndarray grid: the grid node over the polygon
+    :param np.ndarray scores: the scores of each point of the grid
+
+    :return: new grid and new scores
+    :rtype: np.ndarray
+    """
     x = vert[0]
     y = vert[1]
     radius = 0.1*ls  # ARBITRARY : MODIFY IF ERROR
@@ -385,16 +458,24 @@ def remove_points_grid(ls: float, vert: list, grid: np.ndarray, scores: np.array
     return grid, scores
 
 
-def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: np.ndarray, nb_inner_v: int):
+def compute_vertices(ls: float, contour: np.ndarray, grid: np.ndarray, scores: np.ndarray, nb_inner_v: int) -> np.ndarray:
+    """Computes the coords of all the inner vertices
+
+    :param float ls: size of an edge inside the polygon
+    :param np.ndarray contour: coords of the contour
+    :param np.ndarray grid: the grid node over the polygon
+    :param np.ndarray scores: the scores of each point of the grid
+
+    :return: out_vertices, the coords of all the inner vertices
+    :rtype: np.ndarray
+    """
     out_vertices = np.zeros((nb_inner_v, 2))  # coordinates of the vertices
 
     for i in range(nb_inner_v):  # A CORRIGER !!
-        grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
-        print("lens = ", len(grid), len(scores))
+        # print("lens = ", len(grid), len(scores))
         out_vertices[i] = place_inner_vertex(scores, grid, ls)
+        grid, scores = remove_points_grid(ls, out_vertices[i], grid, scores)
         # remove grid points within a given radius of out_vertices[i]:
-
-    print("out vertices : \n", out_vertices)
 
     return out_vertices
 
@@ -418,47 +499,17 @@ def gen_db_nn1():
     gen_database(16, request)
 
 def main():
-    # gmsh.initialize()
-    # Test one mesh
-    # coord = create_random_contour(10)
-    # pr.procrustes(coord)
-    # mesh_contour(coord, "out.msh")
-    # gmsh.finalize()
 
 
-    # request = dict({(1.0, 1)})
-    # gen_database(6, request)
+    request = dict({(1.0, 90)})
+    gen_database(5, request)
     # request = dict({(1.0, 12000)})
     # gen_database(6, request)
     # request = dict({(1.0, 1)})
     # gen_database(8, request)
     # request = dict({(1.0, 48000)})
-    # gen_database(10, request)
-    # request = dict({(1.0, 95000)})
-    # gen_database(12, request)
-    # request = dict({(1.0, 190000)})
-    # gen_database(14, request)
-    # request = dict({(1.0, 380000)})
-    # gen_database(16, request)
 
-    contour = create_random_contour(8)
-    grid = create_grid(contour, 1.0)
-
-    coord_inner_v = mesh_contour(contour, "out.mesh")
-    nb_inner_v = len(coord_inner_v)
-    scores = calculate_score_array(grid, coord_inner_v)
-
-    out_vertices = compute_vertices(1.0, contour, grid, scores, nb_inner_v)
-
-    # Show inner grid :
-    if 1:
-        plt.scatter(np.transpose(grid)[0], np.transpose(
-            grid)[1], c=scores)  # score map of the grid
-        plt.colorbar()
-        plt.scatter(np.transpose(out_vertices)[
-                    0], np.transpose(out_vertices)[1], color="red")  # points put after interpolation
-        plt.title("Score of each point of the grid and position interpolated")
-        plt.show()
+    gmsh.initialize()
 
     return
 

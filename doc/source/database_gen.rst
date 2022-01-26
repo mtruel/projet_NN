@@ -6,9 +6,10 @@ Database overview
 ------------------
 To train the three neural networks, a database is needed. It is composed of thousands of meshed polygon contours. It is important to note that for a given number of points in contour, there is a corresponding database. For example, the database labeled 8 is used to train the models used to generate polygons of 8 contour vertices. To create an element of the database labeled Nc, a random polygonal contour is first generated. It is then scaled and rotated according to a regular polygon. Next, the scaled contour is meshed, using the consumer meshing software Gmsh. The mesh allows to extract the information needed for NN1, NN2 and NN3. 
 
-------------------
+--------------------------------
 Generation of a random contour 
-------------------
+--------------------------------
+
 To generate a random contour of Nc vertices, the method implemented is the same as the one described in the paper. A ring is created by making two concentric circles. This ring is then divided in Nc sectors. Then, 1 point is randomly chosed in each sector :numref:`fig-contour_gen`. 
 
 .. _fig-contour_gen:
@@ -16,6 +17,7 @@ To generate a random contour of Nc vertices, the method implemented is the same 
   :width: 300
   :class: no-scaled-link
   :align: center
+  :alt: Example of creation of contour with 6 vertices.
   
   Example of creation of contour with 6 vertices. 
 
@@ -29,44 +31,62 @@ To ensure a good training, each contour of the database is scaled and rotated ac
   :width: 600
   :class: no-scaled-link
   :align: center
+  :alt: Rotation and scaling of a polygon
 
   Rotation and scaling of a polygon
 
 ------------------
 Meshing 
 ------------------
-The transformed generated polygons can now be meshed. To do so we used Gmsh, an Opensource meshing software, via the Python API. The python function mesh_polygon initialize the api, creates a model containing the contour vertices and edges. Next, the model can be meshed :numref:`fig-meshed_polygon`. It is choosed to not insert point on the contour edges, points may only be inserted inside the polygon.
+The transformed generated polygons can now be meshed. 
+To do so we use Gmsh, an open source meshing software, via the Python API. 
+The python function ``mesh_polygon()`` initialize the api, 
+creates a model containing the contour vertices and edges. 
+Next, the model can be meshed :numref:`fig-meshed_polygon`.
+It is choosed to not insert point on the contour edges, 
+points may only be inserted inside the polygon.
 
 
 .. _fig-meshed_polygon:
-.. figure:: 
+.. figure::
   :width: 600
   :class: no-scaled-link
   :align: center
+  :alt: Meshed polygon
 
   Rotation and scaling of a polygon
 
 
-Finaly, the number of inserted vertices is extracted to train NN1. The cordinates of those vertices are extracted to train NN2. And the connectivity between those is extracted to train NN3 :numref:`_fig-out_nn`. 
+Finaly, the number of inserted vertices is extracted to train NN1. 
+The cordinates of those vertices are extracted to train NN2. 
+And the connectivity between those is extracted to train NN3 :numref:`_fig-out_nn`. 
 
 .. _fig-out_nn:
 .. figure:: images/out_nn_schema.png
   :width: 600
   :class: no-scaled-link
   :align: center
+  :alt: Diagram for the generation of one polygon 
 
-  Diagramm for the generation of one polygon 
+  Diagram for the generation of one polygon 
+
 ------------------
 Automation 
 ------------------
-Currently, only NN1 and NN2 are implemented. Thus only two of the three databases are generated. 
-Nevertheless, to facilitate the use of the neural networks, a file structure has been established. At the root of the database, a label file lists all elements. On every line, there is the path to the file containing the input of the NN and the expected output. This structure is described Fig(). 
+Currently, only NN1 and NN2 are implemented. 
+Thus only two of the three databases are generated. 
+Nevertheless, to facilitate the use of the neural networks, 
+a file structure has been established. At the root of the database, 
+a label file lists all elements. 
+On every line, there is the path to the file containing the input of the NN 
+and the expected output. This structure is described Fig(). 
 
 .. _fig-meshed_polygon:
 .. figure:: 
   :width: 600
   :class: no-scaled-link
   :align: center
+  :alt: Rotation and scaling of a polygon
 
   Rotation and scaling of a polygon
 

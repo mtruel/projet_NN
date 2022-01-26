@@ -54,7 +54,7 @@ Inner nodes
 Once the grid is generated, we need to find the coordinates of the grid nodes 
 that are inside the polygon. 
 The function ``is_in_contour()`` does it by using the Even-odd rule. 
-The algorithm is taken from `this python code <https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule#cite_note-3>`_.
+The algorithm is taken from `this python code <https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule#cite_note-3>`_ from :cite:`wikipedia_2021`.
 
 ^^^^^^^^^^^^^^^^^
 Scores of nodes
@@ -95,8 +95,10 @@ and tries to guess the scores by itself after the training.
 
 The grid generation is made by the ``create_grid()`` function.
 
-The entire grid is given to the network. 
-The article :cite:`papagiannopoulos_clausen_avellan_2021`` splits the grid in multiple parts to give more data to the network.
+The entire grid is given to the network, whereas the article 
+:cite:`papagiannopoulos_clausen_avellan_2021` splits the grid in multiple parts 
+to give more data to the network. 
+This could be done in a future version of the project.
 
 ------------------------
  Final node positioning

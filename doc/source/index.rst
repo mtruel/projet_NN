@@ -20,6 +20,7 @@ In this project the goal is to implement an algorithm capable of meshing simple 
    database_gen
    NN1
    NN2
+   bibliography
    
 
 

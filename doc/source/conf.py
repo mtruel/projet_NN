@@ -24,6 +24,8 @@ author = 'Geoffrey Lebaud, Gabriel Suau, Lucas Trautmann, Mathias Truel'
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
 
+bibtex_bibfiles = ['refs.bib']
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -32,7 +34,8 @@ release = '0.0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.duration'
+    'sphinx.ext.duration',
+    'sphinxcontrib.bibtex'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

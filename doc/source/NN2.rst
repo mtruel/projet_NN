@@ -80,12 +80,23 @@ the coordinates of the grid points inside the polygon and the number of inner no
  Neural Network
 ---------------------
 
-The NN2 takes as input the number of nodes and the coordinates of the
-grid nodes inside the polygon. It is trained by receiving a score list for 
-every node of the grid and tries to guess the scores by itself after the training.
+The NN2 takes as input the contour coordinates, the coordinates of the
+grid points inside the polygon and the target edge lenght ``ls``. 
+It is trained by receiving a score list for every node of the grid 
+and tries to guess the scores by itself after the training.
 
-First, all the grid nodes inside the polygon are given to the network.
-Later, we could split the grid in multiple parts to give more data to the network.
+.. figure:: images/algo_NN2.svg
+  :width: 500
+  :align: center
+  :class: no-scaled-link
+  :alt: Algorihtm of NN2
+
+  Algorihtm of NN2. Source : Article  
+
+The grid generation is made by the ``create_grid()`` function.
+
+The entire grid is given to the network. 
+The article :cite:`papagiannopoulos_clausen_avellan_2021`` splits the grid in multiple parts to give more data to the network.
 
 ------------------------
  Final node positioning
@@ -129,10 +140,11 @@ with a simple condition based on the circle equation:
     scores = np.delete(scores, to_remove)
     return grid, scores
 
-The choice of ``radius`` is important, because a big radius implies more 
-computation time, but a too small radius can misplace the points, 
-like shown figure below.
+The choice of ``radius`` is important, because a big radius implies more points 
+to remove, thus more computation time, but a too small radius can misplace the points, 
+like shown :numref:`error_point`.
 
+.. _error_point:
 .. figure:: images/erreur_point_r0.01_gscale0.05.png
   :width: 500
   :align: center
@@ -178,7 +190,7 @@ find, by addind or subtracting 1 to the index of the two nodes.
                 local_domain_label.append(i)
                 local_domain_label.append(i+1)
 
-This function returns these kinds of result:
+This function returns this kind of results:
 
 .. figure:: images/interpolation_final_zoom.png
   :width: 800

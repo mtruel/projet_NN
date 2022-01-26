@@ -18,6 +18,7 @@ To generate a random contour of Nc vertices, the method implemented is the same 
   :align: center
   
   Example of creation of contour with 6 vertices. 
+
 ------------------
 Scaling 
 ------------------
@@ -30,19 +31,31 @@ To ensure a good training, each contour of the database is scaled and rotated ac
   :align: center
 
   Rotation and scaling of a polygon
+
 ------------------
 Meshing 
 ------------------
-The transformed generated polygons can now be meshed. To do so we used Gmsh, an Opensource meshing software, via the Python API. The python function mesh_polygon initialize the api, creates a model containing the contour vertices and edges. Next, the model can be meshed :numref:`fig-meshed_polygon`. It is choosed to not insert point on the contour edges, points may only be inserted inside the polygon. Finaly, the number of inserted vertices is extracted to train NN1. The cordinates of those vertices are extracted to train NN2. And the connectivity between those is extracted to train NN3. 
+The transformed generated polygons can now be meshed. To do so we used Gmsh, an Opensource meshing software, via the Python API. The python function mesh_polygon initialize the api, creates a model containing the contour vertices and edges. Next, the model can be meshed :numref:`fig-meshed_polygon`. It is choosed to not insert point on the contour edges, points may only be inserted inside the polygon.
+
 
 .. _fig-meshed_polygon:
-.. figure:: images/scale_rotate.png
+.. figure:: 
   :width: 600
   :class: no-scaled-link
   :align: center
 
   Rotation and scaling of a polygon
 
+
+Finaly, the number of inserted vertices is extracted to train NN1. The cordinates of those vertices are extracted to train NN2. And the connectivity between those is extracted to train NN3 :numref:`_fig-out_nn`. 
+
+.. _fig-out_nn:
+.. figure:: images/out_nn_schema.png
+  :width: 600
+  :class: no-scaled-link
+  :align: center
+
+  Diagramm for the generation of one polygon 
 ------------------
 Automation 
 ------------------
@@ -50,7 +63,7 @@ Currently, only NN1 and NN2 are implemented. Thus only two of the three database
 Nevertheless, to facilitate the use of the neural networks, a file structure has been established. At the root of the database, a label file lists all elements. On every line, there is the path to the file containing the input of the NN and the expected output. This structure is described Fig(). 
 
 .. _fig-meshed_polygon:
-.. figure:: images/scale_rotate.png
+.. figure:: 
   :width: 600
   :class: no-scaled-link
   :align: center

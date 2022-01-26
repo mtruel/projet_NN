@@ -53,7 +53,7 @@ Inside nodes
 
 Once the grid is generated, we need to find the coordinates of the grid nodes 
 that are inside the polygon. 
-The function ``is_in_contour`` does it by using the Even-odd rule. 
+The function ``is_in_contour()`` does it by using the Even-odd rule. 
 The algorithm is taken from `this python code <https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule#cite_note-3>`_.
 
 ^^^^^^^^^^^^^^^^^
@@ -61,8 +61,8 @@ Scores of nodes
 ^^^^^^^^^^^^^^^^^
 
 Each grid node now has to be graded with a score defined as 
-the distance to the closest mesh node. The function ``score_of_node`` gives the score of a given node 
-and ``calculate_score_array`` the list of scores for each point of the grid inside the polygon.
+the distance to the closest mesh node. The function ``score_of_node()`` gives the score of a given node 
+and ``calculate_score_array()`` the list of scores for each point of the grid inside the polygon.
 
 .. figure:: images/scores_mesh_examples.png
   :width: 500
@@ -70,7 +70,7 @@ and ``calculate_score_array`` the list of scores for each point of the grid insi
   :class: no-scaled-link
   :alt: score examples
 
-  Example of scores repartition for polygons of 7 nodes. We can see the 4 nodes placed by gmsh.  
+  Example of scores distribution for polygons of 7 nodes. We can see the 4 nodes placed by gmsh.  
 
 NN2 will have to return this list of scores on its own once trained given 
 the coordinates of the grid points inside the polygon and the number of inner nodes.
@@ -93,7 +93,7 @@ make an interpolation to place the nodes more precisely.
 Find the minimums
 ^^^^^^^^^^^^^^^^^^
 
-A solution to find the nodes is made by the following algorithm : 
+A solution to find the nodes is made by the following algorithm: 
 
 * Find the current node with the minimum score and mark it
 * Remove all the nodes within a given radius around the marked node
@@ -112,12 +112,25 @@ are inner nodes.
   Example of radius around the minimum (red point) 
   allowing the other red point to become the second minimum
 
+In our program, the function ``remove_points_grid()`` 
+removes all the points of the grid within the arbitrary radius 
+with a simple condition based on the circle equation:
+
+.. code-block:: python
+
+    if((grid[i][0]-x)**2 + (grid[i][1]-y)**2 < radius**2):
+            to_remove.append(i)
+    grid = np.delete(grid, to_remove, axis=0)
+    scores = np.delete(scores, to_remove)
+    return grid, scores
+
+
 ^^^^^^^^^^^^^^^^^^
 Interpolation
 ^^^^^^^^^^^^^^^^^^
 
-Once we have the position of each inner node of the mesh locked on the grid, 
-we choose to interpolate the scores of the grid points around each inner node
+Once we have the position of an inner node of the mesh locked on the grid, 
+we choose to interpolate the scores of the grid points around this inner node
 to place it more accurately out of the grid constraint.
 
 .. figure:: images/interpolation.svg
@@ -127,4 +140,33 @@ to place it more accurately out of the grid constraint.
   :alt: interpolation schema
 
   Simple schema of how the final node (red) is interpolated 
-  from the scores arond the minimum (center)
+  from the scores around the minimum (center)
+
+This interpolation is made by the function ``place_inner_vertex()``.
+The interpolation is simple to implement with barycentric coordinates, 
+but one has to know the index of the 8 nodes surrounding the minimum score node. 
+The hardest part is to find the index of the nodes directly above and below the 
+center node. In order to find these, we need to go through each node of the grid 
+and look for the two nodes with the same x-coordinate as the center node 
+and a y-coordinate close enough (distance of a square of the grid) 
+to the center node y-coordinate. Then, the 6 other nodes index are easy to 
+find, by addind or subtracting 1 to the index of the two nodes.
+
+.. code-block:: python
+
+    for i in range(len(grid)):
+        if grid[i][0] == coord_min[0]:
+            if abs(grid[i][1]-coord_min[1]) <= 1.1*Gscale:
+                local_domain_label.append(i-1)
+                local_domain_label.append(i)
+                local_domain_label.append(i+1)
+
+This function returns these kinds of result:
+
+.. figure:: images/interpolation_final_zoom.png
+  :width: 800
+  :align: center
+  :class: no-scaled-link
+  :alt: results of the interpolation
+
+  Result of the interpolation of 11 nodes for a polygon of 10 sides

@@ -11,6 +11,7 @@ Before they can be used, the three neural networks have to be trained. An overvi
 
 .. _training:
 .. figure:: images/training_algo.png
+  :align: center
   :width: 4000
   :class: no-scaled-link
   :alt: Overview of the training process of the neural networks
@@ -24,6 +25,7 @@ Once the networks are trained, they can be used to generate meshed from new poly
 
 .. _meshing_framework:
 .. figure:: images/meshing_framework.png
+  :align: center
   :width: 4000
   :class: no-scaled-link
   :alt: Overview of the meshing algorithm

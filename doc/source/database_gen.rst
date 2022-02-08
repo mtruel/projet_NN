@@ -24,7 +24,7 @@ To generate a random contour of Nc vertices, the method implemented is the same 
 ------------------
 Scaling 
 ------------------
-To ensure a good training, each contour of the database is scaled and rotated according to a regular polygon inscribed in a unit circle :numref:`_fig-rotate_scale`. To achive this transformation, we used the procruste function in the scipy library. The function scale and rotates the generated polygon to minimize the distance between the points of the regular polygon and the points of the generated polygon.
+To ensure a good training, each contour of the database is scaled and rotated according to a regular polygon inscribed in a unit circle :numref:`fig-rotate_scale`. To achive this transformation, we used the procruste function in the scipy library. The function scale and rotates the generated polygon to minimize the distance between the points of the regular polygon and the points of the generated polygon.
 
 .. _fig-rotate_scale:
 .. figure:: images/scale_rotate.png
@@ -43,13 +43,11 @@ To do so we use Gmsh, an open source meshing software, via the Python API.
 The python function ``mesh_polygon()`` initialize the api, 
 creates a model containing the contour vertices and edges. 
 Next, the model can be meshed :numref:`fig-meshed_polygon`.
-It is choosed to not insert point on the contour edges, 
-points may only be inserted inside the polygon.
-
+It is choosed to not insert point on the contour edges, points may only be inserted inside the polygon.
 
 .. _fig-meshed_polygon:
-.. figure::
-  :width: 600
+.. figure:: images/meshed_poly.png
+  :width: 200
   :class: no-scaled-link
   :align: center
   :alt: Meshed polygon
@@ -59,7 +57,7 @@ points may only be inserted inside the polygon.
 
 Finaly, the number of inserted vertices is extracted to train NN1. 
 The cordinates of those vertices are extracted to train NN2. 
-And the connectivity between those is extracted to train NN3 :numref:`_fig-out_nn`. 
+And the connectivity between those is extracted to train NN3 :numref:`fig-out_nn`. 
 
 .. _fig-out_nn:
 .. figure:: images/out_nn_schema.png

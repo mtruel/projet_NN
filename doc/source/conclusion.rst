@@ -1,7 +1,7 @@
 Conclusion
 ==================
 
-We suceeded in implenting the first neural network which guesses the number of 
+We suceeded in implementing the first neural network which guesses the number of 
 inner nodes in a given polygon. The second network which has to guess the location 
 of these nodes has still to be finished.  
 The third network has yet to be implemented.

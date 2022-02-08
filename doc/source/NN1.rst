@@ -29,6 +29,8 @@ During a training, the accuracy, average loss and the standard deviation are plo
   :align: center
   :alt: Training for 4 contour nodes.  
 
+  Training results for 4 countour nodes
+
 The network converges well. The accuracy reaches 80% that after 500 epochs while the averge loss stops decreasing. Moreover, the standard deviation is inferior to 1. This means that the neural network is close to the solution even when it misses. 
 
 .. _fig-res2:
@@ -37,6 +39,8 @@ The network converges well. The accuracy reaches 80% that after 500 epochs while
   :class: no-scaled-link
   :align: center
   :alt: Training for 10 contour nodes. 
+
+  Training results for 10 countour nodes
 
 However, when more contour point are present, the network is less accurate. This is due to the fact that on average more points are incerted in a polygon.
 

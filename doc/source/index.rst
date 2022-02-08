@@ -22,6 +22,7 @@ The goal of this project is to implement an algorithm capable of creating 2D sim
    NN2
    usage
    bibliography
+   conclusion
    
 
 

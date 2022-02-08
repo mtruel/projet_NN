@@ -1,14 +1,10 @@
 Motivations and theory
 ======================
 
-Context of this work
---------------------
-
-
 An introduction on meshes and their use
 ---------------------------------------
 
-Meshes are essential building blocks in most Computational Fuild Dynamics or Computational Solid Mechanics simulations. They allow to build a discrete version of the continuous problem that can be then solved using appropriate methods called numerical schemes. A mesh can be defined by the following :
+Meshes are essential building blocks in most Computational Fuild Dynamics or Computational Solid Mechanics simulations. They allow to build a discrete version of the continuous problem that can be then solved using appropriate methods called numerical schemes.
 
 
 Meshes are divided into two main categories : structured and unstructured meshes. In a structured mesh, all vertices have the same number of neighbours and the connectivity can be defined implicitly with simple relationships. In an unstructured mesh, the vertices can have a different amount of neighbours, and the connectivity between the elements has to be stored in an adequate data structure.
@@ -23,5 +19,13 @@ Many mesh generation algorithms have been developped and implemented efficiently
 
 Several multi-threaded mesh generation algorithms have been developped and allow for a faster mesh generation. However, the introduction of parallelism into mesh generation algorithms is very hard and extra care must be taken when developping and implenting the algorithms in order to decrease the runtime while maintaining valid and good quality meshes.
 
+
 An introduction on Neural Networks
 ----------------------------------
+
+
+
+
+Meshing with Neural Networks ?
+------------------------------
+

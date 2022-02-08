@@ -6,7 +6,6 @@ An introduction on meshes and their use
 
 Meshes are essential building blocks in most Computational Fuild Dynamics or Computational Solid Mechanics simulations. They allow to build a discrete version of the continuous problem that can be then solved using appropriate methods called numerical schemes.
 
-
 Meshes are divided into two main categories : structured and unstructured meshes. In a structured mesh, all vertices have the same number of neighbours and the connectivity can be defined implicitly with simple relationships. In an unstructured mesh, the vertices can have a different amount of neighbours, and the connectivity between the elements has to be stored in an adequate data structure.
 
 Meshes can also be simplicial or not. A simplicial mesh is a mesh containing only simplicial elements (triangles in 2D, tetrahedra in 3D). A mesh containing elements of different nature (triangles and quadrilaterals in 2D for instance) is called a mixed mesh.

@@ -2,7 +2,6 @@ Neural Network N°1
 ==================
 The first neural network estimates the number of inserted point inside a given geometry. It takes as input the countour coordinates and the desired mesh size ls. 
 
-
 --------------------
 Database Generation
 --------------------
@@ -21,7 +20,7 @@ To train the Neural Network, the PyTorch framework is used. The data is loaded u
 -----------------
 Results 
 -----------------
-During a training, the accuracy, average loss and the standard deviation are ploted. In the Fig(), the network is trained for 4 contour vertices. In the Fig(), the network is trained for 10 contour vertices. 
+During a training, the accuracy, average loss and the standard deviation are ploted. In the :numref:`fig-res1`, the network is trained for 4 contour vertices. In the :numref:`fig-res2`, the network is trained for 10 contour vertices. 
 
 .. _fig-res1:
 .. figure:: images/nn1res4.png

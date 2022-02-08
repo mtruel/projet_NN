@@ -37,6 +37,7 @@ However, the polygon is scaled and is always contained in the unit circle.
 It is then more conveignant and faster to keep the unit size 
 instead of optimizing a few hundredths every iteration.
 
+.. _fig-schemaNN_grid:
 .. figure:: images/schemaNN_grid.svg
   :width: 300
   :align: center
@@ -67,17 +68,19 @@ Scores of nodes
 ^^^^^^^^^^^^^^^^^
 
 Each grid node now has to be graded with a score defined as 
-the distance to the closest mesh node. The function ``score_of_node()`` 
+the distance to the closest mesh vertex. The function ``score_of_node()`` 
 gives the score of a given node and ``calculate_score_array()`` 
 the list of scores for each point of the grid inside the polygon.
 
+.. _fig-scores_mesh_examples:
 .. figure:: images/scores_mesh_examples.png
   :width: 500
   :align: center
   :class: no-scaled-link
   :alt: score examples
 
-  Example of scores distribution for polygons of 7 nodes. We can see the 4 nodes placed by gmsh.  
+  Example of scores distribution for polygons of 7 nodes. 
+  We can see the 4 nodes placed by gmsh.  
 
 NN2 will have to return this list of scores on its own once trained given 
 the coordinates of the grid points inside the polygon and the number of inner nodes.
@@ -86,14 +89,16 @@ the coordinates of the grid points inside the polygon and the number of inner no
  Neural Network
 ---------------------
 
-^^^^^^^^^^^^^^^^^^
-Algorithm
-^^^^^^^^^^^^^^^^^^
+
 
 The NN2 takes as input the contour coordinates, the coordinates of the
 grid points inside the polygon and the target edge lenght ``ls``. 
 It is trained by receiving a score list for every node of the grid 
 and tries to guess the scores by itself after the training.
+
+^^^^^^^^^^^^^^^^^^^^^
+Network architecture
+^^^^^^^^^^^^^^^^^^^^^
 
 The authors of :cite:`papagiannopoulos_clausen_avellan_2021` give us 
 the hyperparameters of the neural network:
@@ -130,9 +135,13 @@ Those hyperparameters are easily programmed with pytorch as shown below:
           x = self.b3(x)
           return x
 
+^^^^^^^^^^^
+Training
+^^^^^^^^^^^
 
-The algorithm is also given in the article:
+The training algorithm is also given in the article:
 
+.. _fig-algo_NN2:
 .. figure:: images/algo_NN2.svg
   :width: 500
   :align: center
@@ -166,8 +175,10 @@ Results
 
 Once the second neural network is trained, we can start training it with 
 the parameters set in the previous section. 
-The convergence results for a training with only 1 example are shown below:
+The convergence results for a training with only 1 example are shown 
+:numref:`fig-convergence_nn2`.
 
+.. _fig-convergence_nn2:
 .. figure:: images/convergence_nn2.svg
   :width: 500
   :align: center
@@ -177,18 +188,19 @@ The convergence results for a training with only 1 example are shown below:
   Average loss of NN2 for 500 epochs and 1 example, ``Nc=6``.
 
 The average loss seems to decrease, but stays too high.  
-The following plot of the scores returned by this trained NN2 confirm 
-the lack of precision:
+The figure :numref:`fig-result_nn2_1` shows the plot of the scores returned 
+by this trained NN2.
 
+.. _fig-result_nn2_1:
 .. figure:: images/result_nn2_1.png
   :width: 500
   :align: center
   :class: no-scaled-link
   :alt: Graphical results NN2
 
-  Graphical results obtained by NN2 for 500 epochs and 1 example.
+  Graphical results obtained by NN2 for 500 epochs and 1 example, ``Nc=6``.
 
-No real area is suited to place an inner node, and the presence of negative 
+No area stands out as a place to host an inner vertex, and the presence of negative 
 scores shows that this neural network is not fully or properly trained.
 
 | With only one example, we should expect ..... #A CONTINUER
@@ -199,7 +211,8 @@ scores shows that this neural network is not fully or properly trained.
  Final node positioning
 ------------------------
 
-Once the list of scores is guessed by the NN2, we have to guess the coordinates of the mesh nodes, and 
+Once the list of scores is guessed by the NN2, we have to guess 
+the coordinates of the mesh vertices, and 
 make an interpolation to place the nodes more precisely.
 
 ^^^^^^^^^^^^^^^^^^
@@ -214,8 +227,11 @@ A solution to find the nodes is made by the following algorithm:
 
 If the radius is large enough, the new minimum should be in a 
 different position, and the operation can be repeated as much as there 
-are inner nodes. 
+are inner nodes. :numref:`fig-radius_scores` shows an example of hexagon 
+where 2 inner verticies need to be placed. The red circle represents the 
+arbitrary radius in which the grid points are ignored.
 
+.. _fig-radius_scores:
 .. figure:: images/radius_scores.png
   :width: 500
   :align: center
@@ -239,9 +255,9 @@ with a simple condition based on the circle equation:
 
 The choice of ``radius`` is important, because a big radius implies more points 
 to remove, thus more computation time, but a too small radius can misplace the points, 
-like shown :numref:`error_point`.
+like shown in :numref:`fig-erreur_point`.
 
-.. _error_point:
+.. _fig-erreur_point:
 .. figure:: images/erreur_point_r0.01_gscale0.05.png
   :width: 500
   :align: center
@@ -257,8 +273,10 @@ Interpolation
 
 Once we have the position of an inner node of the mesh locked on the grid, 
 we choose to interpolate the scores of the grid points around this inner node
-to place it more accurately out of the grid constraint.
+to place it more accurately out of the grid constraint. 
+An example of this interpolation is represented :numref:`fig-interpolation`.
 
+.. _fig-interpolation:
 .. figure:: images/interpolation.svg
   :width: 400
   :align: center
@@ -287,8 +305,10 @@ find, by addind or subtracting 1 to the index of the two nodes.
                 local_domain_label.append(i)
                 local_domain_label.append(i+1)
 
-This function returns this kind of results:
+This function returns results as shown in 
+:numref:`fig-interpolation_final_zoom`:
 
+.. _fig-interpolation_final_zoom:
 .. figure:: images/interpolation_final_zoom.png
   :width: 800
   :align: center

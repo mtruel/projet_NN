@@ -3,14 +3,14 @@ Neural Network N°1
 The first neural network estimates the number of inserted point inside a given geometry. It takes as input the countour coordinates and the desired mesh size ls. 
 
 
-------------------
+--------------------
 Database Generation
-------------------
+--------------------
 Before training the neural network, the database is created by extracting the number of vertices inserted by Gmsh inside a polygon contour. The database is composed of input files storing the contour cordinates and ls has a single vector. A label file references every element of the database with the path of the input file and the expected output given by Gmsh. 
 
------------------
+--------------------
 Network architecture
------------------
+--------------------
 The architecture of the network is simple : 3 layers of perceptrons with batch normalisation using the ReLU activation function for the first two layers. Each layer is composed of 4 * Nc nodes. 
 
 -----------------

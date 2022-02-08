@@ -8,7 +8,7 @@ Meshing with Neural Networks
 
 Abstract 
 --------------------------
-In this project the goal is to implement an algorithm capable of meshing simple polygons. The method is data driven, meaning a database of thousand of polygons is used to train the algorithm. Once the model is trained, it is used to predict new data. Models are three neural networks called NN1 NN2 and NN3 with different goals. NN1 predicts the number of nodes to insert in the polygon. NN2 places the nodes. Finally, NN3 creates the connectivity between nodes. 
+The goal of this project is to implement an algorithm capable of creating 2D simplicial unstructured meshes of simple polygonal geometries using Neural Networks. This algorithm uses three neural networks called NN1, NN2 and NN3 in order to mesh the geometry, each one fulfilling a specific task. NN1 predicts the number of vertices to be inserted inside the polygon, NN2 predicts the location of those vertices, and NN3 creates the connectivity between the vertices. This algorithm is data driven: the neural networks have to be trained before they can be used. The training is done using a database of polygons that were meshed with an open-source Delaunay mesher.
 
 
 .. toctree::

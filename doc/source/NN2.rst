@@ -95,6 +95,44 @@ grid points inside the polygon and the target edge lenght ``ls``.
 It is trained by receiving a score list for every node of the grid 
 and tries to guess the scores by itself after the training.
 
+The authors of :cite:`papagiannopoulos_clausen_avellan_2021` give us 
+the hyperparameters of the neural network:
+
+ "There are 3 layers with batch normalization and the ReLU activation function 
+ for the first 2 layers. The first two layers contain 
+ :math:`2 \cdot N_{C}+N_{G_{k}}` hidden nodes and the output layer contains 
+ :math:`N_{G_{k}}` nodes."
+
+Those hyperparameters are easily programmed with pytorch as shown below:
+
+.. code-block:: python
+
+  class NN2(nn.Module):
+
+      def __init__(self, n_features: int, Np : int):
+          Ngk = int(n_features/Np)
+          super(NN2, self).__init__()
+          self.l1 = nn.Linear(n_features, 2 * n_features + Ngk)
+          self.b1 = nn.BatchNorm1d(2 * n_features + Ngk)
+          self.l2 = nn.Linear(2 * n_features + Ngk, 2 * n_features + Ngk)
+          self.b2 = nn.BatchNorm1d(2 * n_features + Ngk)
+          self.l3 = nn.Linear(2 * n_features + Ngk, 1)
+          self.b3 = nn.BatchNorm1d(Ngk)
+  
+      def forward(self, x: torch.Tensor):
+          x = self.l1(x.float())
+          x = self.b1(x)
+          x = func.relu(x)
+          x = self.l2(x)
+          x = self.b2(x)
+          x = func.relu(x)
+          x = self.l3(x)
+          x = self.b3(x)
+          return x
+
+
+The algorithm is also given in the article:
+
 .. figure:: images/algo_NN2.svg
   :width: 500
   :align: center
@@ -103,13 +141,32 @@ and tries to guess the scores by itself after the training.
 
   Algorihtm of NN2. Source : :cite:`papagiannopoulos_clausen_avellan_2021`
 
+The code below shows the implementation of this algorithm:
 
+.. code-block:: python
+
+  def train_loop(dataloader: DataLoader, model: NN2, loss_fn: nn.L1Loss, optimizer, device):
+ 
+      size = len(dataloader.dataset)
+      model.train()
+      for batch, (x, y) in enumerate(dataloader):
+          x, y = torch.tensor(x).to(device), torch.tensor(y).to(device)
+          y_pred = model(x)
+          loss = loss_fn(y_pred.squeeze(), y)
+
+          optimizer.zero_grad()
+          loss.backward()
+          optimizer.step()
+
+      return
 
 ^^^^^^^^^^^^^^^^^^
 Results
 ^^^^^^^^^^^^^^^^^^
 
-Once the second neural network is 
+Once the second neural network is trained, we can start training it with 
+the parameters set in the previous section. 
+The convergence results for a training with only 1 example are shown below:
 
 .. figure:: images/convergence_nn2.svg
   :width: 500
@@ -119,16 +176,24 @@ Once the second neural network is
 
   Average loss of NN2 for 500 epochs and 1 example, ``Nc=6``.
 
+The average loss seems to decrease, but stays too high.  
+The following plot of the scores returned by this trained NN2 confirm 
+the lack of precision:
+
 .. figure:: images/result_nn2_1.png
   :width: 500
   :align: center
   :class: no-scaled-link
   :alt: Graphical results NN2
 
-  Graphical results obtained by NN2 for 500 epochs and 3 examples.
+  Graphical results obtained by NN2 for 500 epochs and 1 example.
 
+No real area is suited to place an inner node, and the presence of negative 
+scores shows that this neural network is not fully or properly trained.
 
-
+| With only one example, we should expect ..... #A CONTINUER
+| There are multiple possible reasons explaining this poor result:
+| - # A CONTINUER
 
 ------------------------
  Final node positioning

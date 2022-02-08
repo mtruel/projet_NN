@@ -47,6 +47,12 @@ instead of optimizing a few hundredths every iteration.
 
 The grid generation is made by the ``create_grid()`` function.
 
+The entire grid is given to the network, whereas the article 
+:cite:`papagiannopoulos_clausen_avellan_2021` splits the grid in multiple parts 
+to give more data to the network. 
+This could be done in a future version of the project.
+
+
 ^^^^^^^^^^^^^^^^^
 Inner nodes
 ^^^^^^^^^^^^^^^^^
@@ -80,6 +86,10 @@ the coordinates of the grid points inside the polygon and the number of inner no
  Neural Network
 ---------------------
 
+^^^^^^^^^^^^^^^^^^
+Algorithm
+^^^^^^^^^^^^^^^^^^
+
 The NN2 takes as input the contour coordinates, the coordinates of the
 grid points inside the polygon and the target edge lenght ``ls``. 
 It is trained by receiving a score list for every node of the grid 
@@ -91,14 +101,34 @@ and tries to guess the scores by itself after the training.
   :class: no-scaled-link
   :alt: Algorihtm of NN2
 
-  Algorihtm of NN2. Source : Article  
+  Algorihtm of NN2. Source : :cite:`papagiannopoulos_clausen_avellan_2021`
 
-The grid generation is made by the ``create_grid()`` function.
 
-The entire grid is given to the network, whereas the article 
-:cite:`papagiannopoulos_clausen_avellan_2021` splits the grid in multiple parts 
-to give more data to the network. 
-This could be done in a future version of the project.
+
+^^^^^^^^^^^^^^^^^^
+Results
+^^^^^^^^^^^^^^^^^^
+
+Once the second neural network is 
+
+.. figure:: images/convergence_nn2.svg
+  :width: 500
+  :align: center
+  :class: no-scaled-link
+  :alt: Convergence of NN2
+
+  Average loss of NN2 for 500 epochs and 1 example, ``Nc=6``.
+
+.. figure:: images/result_nn2_1.png
+  :width: 500
+  :align: center
+  :class: no-scaled-link
+  :alt: Graphical results NN2
+
+  Graphical results obtained by NN2 for 500 epochs and 3 examples.
+
+
+
 
 ------------------------
  Final node positioning
